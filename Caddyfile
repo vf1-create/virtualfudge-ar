@@ -1,0 +1,18 @@
+# Caddy gets + renews the HTTPS certificate automatically (camera access requires HTTPS).
+# Set DOMAIN, e.g. ar.yourbrand.com, and point its DNS A record at this server.
+{$DOMAIN:localhost} {
+	root * /srv
+	encode zstd gzip
+	file_server
+
+	header {
+		Permissions-Policy "camera=(self)"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	# Big, versioned binaries: cache hard. App files: always revalidate so edits show up.
+	@vendor path /vendor/*
+	header @vendor Cache-Control "public, max-age=31536000, immutable"
+	@app not path /vendor/*
+	header @app Cache-Control "no-cache"
+}

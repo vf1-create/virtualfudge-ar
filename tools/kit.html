@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Season AR · Promo Kit</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+  <style>
+    :root { --primary:#0B1B3F; --accent:#3BD5FF; --highlight:#FFC93C; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f4f6fb; color: #111827; }
+    main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+    h1 { margin: 0 0 4px; font-size: 28px; }
+    .sub { margin: 0 0 24px; color: #4b5563; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .card h2 { margin: 0 0 12px; font-size: 17px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; color: #374151; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; font: inherit; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    button { padding: 10px 16px; border: 0; border-radius: 10px; font: inherit; font-weight: 700; cursor: pointer; background: var(--primary); color: #fff; }
+    button.alt { background: #e5e7eb; color: #111827; }
+    code { background: #eef2f7; padding: 2px 6px; border-radius: 6px; font-size: 12px; word-break: break-all; }
+    canvas { width: 100%; height: auto; border-radius: 12px; display: block; background: #fff; }
+    #qrPreview { max-width: 220px; border: 1px solid #e5e7eb; }
+    .note { font-size: 13px; color: #4b5563; margin: 10px 0 0; }
+    #nfcStatus { font-weight: 600; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .tabs button { background: #e5e7eb; color: #111827; padding: 8px 12px; font-size: 14px; }
+    .tabs button[aria-selected="true"] { background: var(--primary); color: #fff; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Promo Kit</h1>
+  <p class="sub">Make the QR codes, NFC tags and social posts that send people into the AR filter.</p>
+
+  <div class="grid">
+    <div>
+      <section class="card">
+        <h2>1 · Link</h2>
+        <label for="url">AR page URL (your live https link)</label>
+        <input id="url" type="url" placeholder="https://ar.yourbrand.com/">
+        <label for="src">Source tag (shows up in analytics as <code>src</code>)</label>
+        <select id="src">
+          <option value="ig-post">ig-post: Instagram post / story</option>
+          <option value="tiktok">tiktok: TikTok bio / video</option>
+          <option value="poster">poster: printed poster</option>
+          <option value="nfc-booth">nfc-booth: tap-to-try NFC tag</option>
+          <option value="stadium-screen">stadium-screen: big screen / venue</option>
+          <option value="email">email: newsletter</option>
+        </select>
+        <p class="note">Final link: <code id="finalUrl"></code></p>
+      </section>
+
+      <section class="card" style="margin-top:16px">
+        <h2>2 · QR code</h2>
+        <canvas id="qrPreview" width="1024" height="1024"></canvas>
+        <div class="row">
+          <button id="dlQR">Download QR (PNG)</button>
+          <button id="copyLink" class="alt">Copy link</button>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:16px">
+        <h2>3 · Tap-to-try NFC tag</h2>
+        <p class="note" style="margin-top:0">Stick an NFC tag (NTAG213/215, a few cents each) on a poster, table tent or wristband. Phones open the AR page when tapped, no app needed.</p>
+        <div class="row">
+          <button id="writeNfc">Write link to NFC tag</button>
+        </div>
+        <p class="note" id="nfcStatus"></p>
+        <p class="note">Writing from this page needs Chrome on Android over https. On iPhone use a free app like “NFC Tools” → Write → URL.</p>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>4 · Social post / poster</h2>
+      <div class="tabs" role="tablist">
+        <button data-size="1080x1350" aria-selected="true">Feed 4:5</button>
+        <button data-size="1080x1920">Story 9:16</button>
+        <button data-size="2480x3508">Print A4</button>
+      </div>
+      <canvas id="poster"></canvas>
+      <div class="row">
+        <button id="dlPoster">Download image</button>
+      </div>
+      <p class="note">Post this with a caption like “Scan to try our new season AR filter, then tag us!” Your link goes in the bio / link sticker.</p>
+    </section>
+  </div>
+</main>
+
+<script src="../vendor/qrcode.js"></script>
+<script type="module">
+  import C from '../js/config.js';
+  import { countdownLabel } from '../js/frame.js';
+
+  const $ = (s) => document.querySelector(s);
+  const FONT = '"Arial Black", "Helvetica Neue", Helvetica, system-ui, sans-serif';
+  for (const [k, v] of Object.entries(C.colors)) document.documentElement.style.setProperty(`--${k}`, v);
+
+  const defaultUrl = new URL('../', location.href).href;
+  $('#url').value = localStorageGet('kit-url') || (location.hostname === 'localhost' ? '' : defaultUrl);
+  $('#url').placeholder = defaultUrl;
+  let size = [1080, 1350];
+
+  function localStorageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+  function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
+  function finalUrl() {
+    let u;
+    try { u = new URL($('#url').value || defaultUrl); } catch { u = new URL(defaultUrl); }
+    u.searchParams.set('src', $('#src').value);
+    return u.href;
+  }
+
+  function drawQR(cv, url, x, y, s, { dark = C.colors.primary, light = '#fff', quiet = 2 } = {}) {
+    const qr = qrcode(0, 'Q'); qr.addData(url); qr.make();
+    const n = qr.getModuleCount(), cell = s / (n + quiet * 2), ctx = cv.getContext('2d');
+    ctx.fillStyle = light; ctx.fillRect(x, y, s, s);
+    ctx.fillStyle = dark;
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (qr.isDark(r, c)) ctx.fillRect(x + (c + quiet) * cell, y + (r + quiet) * cell, Math.ceil(cell), Math.ceil(cell));
+    }
+  }
+
+  function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+  function drawPoster() {
+    const [W, H] = size, cv = $('#poster'), ctx = cv.getContext('2d'), u = W / 1080;
+    cv.width = W; cv.height = H;
+    const { primary, accent, highlight, text } = C.colors;
+    ctx.fillStyle = primary; ctx.fillRect(0, 0, W, H);
+    let g = ctx.createRadialGradient(W * 0.2, H * 0.15, 0, W * 0.2, H * 0.15, W * 0.9);
+    g.addColorStop(0, accent + '88'); g.addColorStop(1, accent + '00');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    g = ctx.createRadialGradient(W * 0.9, H * 0.85, 0, W * 0.9, H * 0.85, W * 0.8);
+    g.addColorStop(0, highlight + '66'); g.addColorStop(1, highlight + '00');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, accent); g.addColorStop(0.5, highlight); g.addColorStop(1, accent);
+    ctx.strokeStyle = g; ctx.lineWidth = 12 * u; rr(ctx, 30 * u, 30 * u, W - 60 * u, H - 60 * u, 56 * u); ctx.stroke();
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = text;
+    const top = H * 0.1;
+    ctx.font = `800 ${34 * u}px ${FONT}`; ctx.globalAlpha = 0.85; ctx.fillText(C.brand.split('').join(String.fromCharCode(8202)), W / 2, top); ctx.globalAlpha = 1;
+    ctx.font = `italic 900 ${96 * u}px ${FONT}`;
+    wrap(ctx, C.seasonTitle, W / 2, top + 130 * u, W - 160 * u, 100 * u);
+
+    // countdown pill
+    const label = countdownLabel(C);
+    ctx.font = `italic 900 ${40 * u}px ${FONT}`;
+    const pw = ctx.measureText(label).width + 70 * u, py = top + 330 * u;
+    rr(ctx, W / 2 - pw / 2, py - 34 * u, pw, 68 * u, 34 * u); ctx.fillStyle = highlight; ctx.fill();
+    ctx.fillStyle = primary; ctx.fillText(label, W / 2, py + 2 * u);
+
+    // QR card
+    const qs = Math.min(W * 0.48, H * 0.32), qy = H * 0.5 - qs / 2 + 70 * u;
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40 * u; ctx.shadowOffsetY = 12 * u;
+    rr(ctx, W / 2 - qs / 2 - 24 * u, qy - 24 * u, qs + 48 * u, qs + 48 * u, 36 * u); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+    drawQR(cv, finalUrl(), W / 2 - qs / 2, qy, qs, { quiet: 1 });
+
+    ctx.fillStyle = text; ctx.font = `italic 900 ${58 * u}px ${FONT}`;
+    ctx.fillText('SCAN OR TAP TO TRY', W / 2, qy + qs + 110 * u);
+    ctx.font = `700 ${34 * u}px system-ui, sans-serif`; ctx.globalAlpha = 0.85;
+    ctx.fillText('the AR selfie filter. No app needed.', W / 2, qy + qs + 170 * u); ctx.globalAlpha = 1;
+
+    g = ctx.createLinearGradient(W * 0.25, 0, W * 0.75, 0); g.addColorStop(0, accent); g.addColorStop(1, highlight);
+    ctx.fillStyle = g; ctx.font = `italic 900 ${72 * u}px ${FONT}`;
+    ctx.fillText(C.hashtag, W / 2, H - 120 * u, W - 160 * u);
+  }
+
+  function wrap(ctx, str, x, y, maxW, lh) {
+    const words = str.split(' '), lines = [];
+    let line = '';
+    for (const w of words) {
+      const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+    }
+    lines.push(line);
+    lines.forEach((l, i) => ctx.fillText(l, x, y + (i - (lines.length - 1) / 2) * lh));
+  }
+
+  function refresh() {
+    localStorageSet('kit-url', $('#url').value);
+    $('#finalUrl').textContent = finalUrl();
+    const q = $('#qrPreview');
+    drawQR(q, finalUrl(), 0, 0, q.width);
+    drawPoster();
+  }
+
+  function download(canvas, name) {
+    canvas.toBlob((b) => {
+      const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(b), download: name });
+      a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }, 'image/png');
+  }
+
+  $('#url').addEventListener('input', refresh);
+  $('#src').addEventListener('change', refresh);
+  $('#dlQR').addEventListener('click', () => download($('#qrPreview'), `qr-${$('#src').value}.png`));
+  $('#dlPoster').addEventListener('click', () => download($('#poster'), `promo-${size.join('x')}-${$('#src').value}.png`));
+  $('#copyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText(finalUrl()); $('#copyLink').textContent = 'Copied ✓'; } catch {} });
+  document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', x === b));
+    size = b.dataset.size.split('x').map(Number); drawPoster();
+  }));
+
+  $('#writeNfc').addEventListener('click', async () => {
+    const status = $('#nfcStatus');
+    if (!('NDEFReader' in window)) { status.textContent = 'Web NFC isn’t available here. Use Chrome on Android, or the NFC Tools app.'; return; }
+    try {
+      status.textContent = 'Hold the tag against the back of your phone…';
+      const url = new URL(finalUrl()); url.searchParams.set('src', 'nfc-booth');
+      await new NDEFReader().write({ records: [{ recordType: 'url', data: url.href }] });
+      status.textContent = '✓ Tag written! Tap it with any phone to test.';
+    } catch (e) { status.textContent = 'Couldn’t write: ' + e.message; }
+  });
+
+  refresh();
+</script>
+</body>
+</html>

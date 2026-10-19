@@ -1,0 +1,14 @@
+services:
+  season-ar:
+    build: .
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}   # DOMAIN=ar.yourbrand.com docker compose up -d --build
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data             # keeps your TLS certificates across restarts
+volumes:
+  caddy_data:

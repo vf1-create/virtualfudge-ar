@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0B1B3F">
+  <title>Virtual Fudge AR</title>
+  <!-- Social link previews: update these to your brand + absolute URL -->
+  <meta name="description" content="Try the new season AR filter. Snap a selfie, share it.">
+  <meta property="og:title" content="Get Season Ready ✨ AR Selfie">
+  <meta property="og:description" content="Tap, pick a filter, snap a selfie, share it. No app needed.">
+  <meta property="og:image" content="assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="modulepreload" href="vendor/mediapipe/vision_bundle.mjs">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 1. Intro -->
+  <section id="intro" class="screen active">
+    <div class="glow"></div>
+    <div class="intro-card">
+      <p class="brand" data-text="brand"></p>
+      <h1 data-text="seasonTitle"></h1>
+      <p class="pill" id="countdown"></p>
+      <button id="startBtn" class="btn primary big">Tap to start AR&nbsp;✨</button>
+      <p class="fine">Runs entirely on your device. Nothing is uploaded unless you share it.</p>
+      <div id="desktopQR" class="qr-panel" hidden>
+        <canvas id="qr" width="232" height="232" aria-label="QR code to open this page on your phone"></canvas>
+        <p><strong>Best on your phone.</strong><br>Scan to open.</p>
+      </div>
+      <p class="tag" data-text="hashtag"></p>
+    </div>
+  </section>
+
+  <!-- 2. Live AR camera -->
+  <section id="ar" class="screen" aria-label="AR camera">
+    <canvas id="stage"></canvas>
+    <video id="cam" playsinline muted autoplay></video>
+    <div class="topbar">
+      <button id="closeBtn" class="icon-btn" aria-label="Close">✕</button>
+      <button id="flipBtn" class="icon-btn" aria-label="Switch camera">⇆</button>
+    </div>
+    <div id="hint" class="hint" hidden></div>
+    <div id="loading" class="loading"><div class="spinner"></div><p>Warming up the AR…</p></div>
+    <div class="bottombar">
+      <div id="filters" class="filters" role="tablist"></div>
+      <button id="shutter" class="shutter" aria-label="Tap for photo, hold for video"><span></span></button>
+      <p class="shutter-tip">Tap for photo · Hold for video</p>
+    </div>
+    <div id="flash" class="flash"></div>
+  </section>
+
+  <!-- 3. Result -->
+  <section id="result" class="screen">
+    <div id="resultMedia" class="result-media"></div>
+    <div class="result-actions">
+      <button id="retakeBtn" class="btn ghost">↺ Retake</button>
+      <button id="saveBtn" class="btn ghost">⤓ Save</button>
+      <button id="shareBtn" class="btn primary">Share&nbsp;↗</button>
+    </div>
+    <a id="cta" class="cta" target="_blank" rel="noopener" hidden></a>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
