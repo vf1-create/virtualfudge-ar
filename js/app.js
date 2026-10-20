@@ -286,21 +286,23 @@ function loop(now) {
   }
 }
 
-// Older phones: if frames take too long at 1080p, drop to 720p (still sharp for Stories)
-function adaptQuality(dt) {
+// Older phones: if frames take too long at 1080p, drop to 720p (still sharp for Stories).
+// Judged over rolling ~3 s windows once face tracking is running.
+function adaptQuality(raw) {
   if (W <= 720 || state.recorder || !state.landmarker) return;
-  const q = (state.q ||= { n: 0, sum: 0 });
-  if (++q.n < 30) return; // skip warm-up frames
-  q.sum += dt;
-  if (q.n < 120) return;
-  const avg = q.sum / (q.n - 30);
-  q.n = 0; q.sum = 0;
+  const now = performance.now();
+  const q = (state.q ||= { since: now + 1500, frames: 0, time: 0 }); // 1.5 s warm-up
+  if (now < q.since) return;
+  q.frames++; q.time += raw;
+  if (now - q.since < 3000) return;
+  const avg = q.time / q.frames;
+  state.q = { since: now, frames: 0, time: 0 };
   if (avg > 0.045) { // slower than ~22 fps
     W = 720; H = Math.round((720 * C.output.height) / C.output.width);
     canvas.width = W; canvas.height = H;
     fx = new Particles(W / 1080);
     state.faces = [];
-    console.info('[ar] switched to 720p for smoother frames');
+    console.info(`[ar] ${Math.round(1 / avg)} fps at 1080p, switched to 720p`);
   }
 }
 
