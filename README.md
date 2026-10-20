@@ -1,4 +1,4 @@
-# Season AR: self-hosted selfie filter promo
+# Virtual Fudge AR: "The Sweetest Season" selfie filter
 
 A face-tracking AR selfie experience for your season launch, served from your own server.
 No app to install, no Meta Spark / Snap / 8th Wall account, no third-party scripts or CDNs, and no tracking you didn't add yourself.
@@ -15,12 +15,13 @@ All face tracking runs on the device (Google MediaPipe, vendored locally). Nothi
 
 | Filter | What it does | Mouth-open effect |
 |---|---|---|
-| 🏆 Game Face | Team headband with your season text, eye-black stripes, a star that grows when you smile | Confetti in brand colors |
-| ❄️ Snow Day | Knit beanie with pom-pom, rosy cheeks, falling snow | Frosty breath |
+| 🍫 Fudge Shades | The Virtual Fudge logo as wearable AR: striped fudge-bar shades with live drips, framed by the logo's viewfinder corners | Fudge-chunk shower, and the drips stretch |
+| ❄️ Snow Day | Chocolate knit beanie with a VIRTUAL FUDGE cuff, rosy cheeks, falling snow | Frosty breath |
 | 👑 MVP Crown | Floating gold crown with orbiting sparkles | Gold confetti rain |
 | 🕶️ Star Shades | Wobbly star-shaped sunglasses | Star burst |
 
-Every photo and video carries your frame: brand mark, a live **“N DAYS TO GO”** countdown, the season title, the hashtag and the opening date.
+Every photo and video carries the Virtual Fudge frame: logo, a seasonal pill (or a live **“N DAYS TO GO”** countdown if you set `seasonStart`), the title and `#VirtualFudge`.
+The logo and colors come from the Virtual Fudge logo files (`LOGO/Logos – Transparent` in Drive). A 🏆 Game Face filter is also included but switched off; add `'gameface'` to `filters` to use it.
 Group selfies work too (up to 3 faces by default).
 
 ---

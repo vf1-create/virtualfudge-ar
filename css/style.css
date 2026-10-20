@@ -1,7 +1,7 @@
 :root {
-  --primary: #0B1B3F;
-  --accent: #3BD5FF;
-  --highlight: #FFC93C;
+  --primary: #240D02;
+  --accent: #AE6B39;
+  --highlight: #F3D3AC;
   --text: #FFFFFF;
   --ar: 1080 / 1920;
   --font: "Arial Black", "Helvetica Neue", Helvetica, system-ui, sans-serif;
@@ -9,6 +9,7 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; background: #000; color: var(--text); font-family: var(--ui); overflow: hidden; overscroll-behavior: none; }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; touch-action: manipulation; }
 
@@ -26,11 +27,12 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 }
 @keyframes drift { to { transform: translate(6%, -4%) rotate(8deg); } }
 .intro-card { position: relative; max-width: 440px; width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; margin: auto; }
+.brand-logo { width: min(240px, 60vw); height: auto; display: block; }
 .brand { margin: 0; letter-spacing: .3em; font-weight: 800; font-size: 13px; opacity: .85; }
 h1 { margin: 0; font-family: var(--font); font-style: italic; font-weight: 900; font-size: clamp(38px, 11vw, 60px); line-height: .95; text-wrap: balance; text-shadow: 0 6px 30px rgba(0,0,0,.35); }
 .pill { margin: 0; padding: 8px 18px; border-radius: 99px; background: var(--highlight); color: var(--primary); font-family: var(--font); font-style: italic; font-weight: 900; font-size: 16px; }
 .fine { margin: 0; font-size: 13px; opacity: .7; max-width: 300px; }
-.tag { margin: 4px 0 0; font-family: var(--font); font-style: italic; font-weight: 900; font-size: 22px; background: linear-gradient(90deg, var(--accent), var(--highlight)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tag { margin: 4px 0 0; font-family: var(--font); font-style: italic; font-weight: 900; font-size: 22px; background: linear-gradient(90deg, var(--highlight), var(--text)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 .btn { padding: 14px 22px; border-radius: 99px; font-weight: 800; font-size: 16px; transition: transform .12s; }
 .btn:active { transform: scale(.96); }

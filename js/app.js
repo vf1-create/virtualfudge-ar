@@ -35,7 +35,13 @@ document.querySelector('meta[name="theme-color"]').content = C.colors.primary;
 document.title = `${C.brand} · ${C.seasonTitle}`;
 document.querySelectorAll('[data-text]').forEach((el) => { el.textContent = C[el.dataset.text]; });
 $('#countdown').textContent = countdownLabel(C);
-if (C.logo) { state.logo = new Image(); state.logo.src = C.logo; }
+if (C.logo) {
+  state.logo = new Image();
+  state.logo.src = C.logo;
+  const brand = document.querySelector('#intro .brand');
+  const img = Object.assign(document.createElement('img'), { src: C.logo, alt: C.brand, className: 'brand-logo' });
+  img.onload = () => brand.replaceWith(img);
+}
 if (C.ctaLabel && C.ctaUrl) {
   const cta = $('#cta');
   cta.textContent = `${C.ctaLabel} →`; cta.href = C.ctaUrl; cta.hidden = false;

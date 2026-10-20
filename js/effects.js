@@ -236,6 +236,60 @@ const gameface = {
   },
 };
 
+// The Virtual Fudge mark as wearable AR: striped fudge-bar shades that drip,
+// framed by the logo's viewfinder corners.
+const VF_STOPS = [[0, '#240d02'], [0.35, '#ae6b39'], [0.5, '#a96a3b'], [0.65, '#ae6b39'], [1, '#240d02']];
+
+function lensPath(ctx, cx, s) { // s = +1 right lens, -1 left lens (outer side points along s)
+  const w = 0.215, top = -0.15, bot = 0.2;
+  ctx.moveTo(cx - s * w * 0.9, top + 0.012);
+  ctx.quadraticCurveTo(cx, top - 0.015, cx + s * w, top + 0.01);
+  ctx.quadraticCurveTo(cx + s * (w + 0.03), top + 0.06, cx + s * w * 0.97, top + 0.17);
+  ctx.bezierCurveTo(cx + s * w * 0.9, bot + 0.02, cx - s * w * 0.3, bot + 0.04, cx - s * w * 0.72, bot - 0.06);
+  ctx.quadraticCurveTo(cx - s * w * 1.0, 0.03, cx - s * w * 0.9, top + 0.012);
+  ctx.closePath();
+}
+
+const vfshades = {
+  id: 'vfshades', name: 'Fudge Shades', emoji: '🍫', burst: 'fudge', hint: 'Open your mouth to make it drip 😮',
+  draw(ctx, f, t) {
+    enter(ctx, f);
+    const e = f.eyeHalf;
+    const g = ctx.createLinearGradient(-e - 0.22, 0, e + 0.22, 0);
+    VF_STOPS.forEach(([o, c]) => g.addColorStop(o, c));
+    const bar = 0.025, step = 0.035;
+
+    // viewfinder corners around the face
+    ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = 0.022; ctx.lineCap = 'square';
+    const x0 = 0.6, yT = f.top - 0.12, yB = f.chin + 0.06, arm = 0.12;
+    for (const [x, y, dx, dy] of [[-x0, yT, 1, 1], [x0, yT, -1, 1], [-x0, yB, 1, -1], [x0, yB, -1, -1]]) {
+      ctx.beginPath(); ctx.moveTo(x, y + dy * arm); ctx.lineTo(x, y); ctx.lineTo(x + dx * arm, y); ctx.stroke();
+    }
+
+    // striped lenses + bridge
+    ctx.save();
+    ctx.beginPath();
+    lensPath(ctx, -e, -1);
+    lensPath(ctx, e, 1);
+    ctx.rect(-e + 0.12, -0.155, 2 * (e - 0.12), 0.055);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(20,6,0,.62)'; // dark lens tint between the bars
+    ctx.fillRect(-1, -0.3, 2, 0.6);
+    ctx.fillStyle = g;
+    for (let x = -e - 0.24; x < e + 0.24; x += step) ctx.fillRect(x, -0.3, bar, 0.6);
+    ctx.restore();
+
+    // drips off the right lens; they stretch when the mouth opens
+    ctx.fillStyle = g;
+    [[0.02, 0.16, 0], [0.056, 0.09, 1.7], [0.092, 0.12, 3.1]].forEach(([dx, len, ph]) => {
+      const x = e + dx - bar / 2;
+      const y0 = 0.15, l = len + Math.sin(t * 1.6 + ph) * 0.025 + f.jaw * 0.2;
+      ctx.fillRect(x, y0, bar, l);
+      ctx.beginPath(); ctx.arc(x + bar / 2, y0 + l, bar / 2, 0, Math.PI); ctx.fill();
+    });
+  },
+};
+
 const shades = {
   id: 'shades', name: 'Star Shades', emoji: '🕶️', burst: 'stars', hint: 'Open your mouth for star power 😮',
   draw(ctx, f, t) {
@@ -264,7 +318,7 @@ const shades = {
   },
 };
 
-const ALL = { snow, mvp, gameface, shades };
+const ALL = { vfshades, snow, mvp, gameface, shades };
 export function getFilters(ids) { return ids.map((id) => ALL[id]).filter(Boolean); }
 
 // ── Particles (screen space) ─────────────────────────────────
@@ -346,6 +400,7 @@ export class Particles {
 function palette(type) {
   switch (type) {
     case 'snow': return ['#ffffff', '#eaf8ff', '#d4f3ff'];
+    case 'fudge': return ['#240d02', '#5a2a10', '#8d4f29', '#ae6b39', '#f3d3ac', '#ffffff'];
     case 'gold': return ['#FFD54A', '#FFC93C', '#FFF1B0', '#E0A800', '#ffffff'];
     case 'stars': return [C.colors.highlight, C.colors.accent, '#ffffff'];
     default: return [C.colors.accent, C.colors.highlight, '#ffffff', '#ff3b6b'];

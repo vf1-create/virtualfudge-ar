@@ -39,9 +39,9 @@ export function drawBrandFrame(ctx, W, H, C, t, logo) {
   ctx.textBaseline = 'middle';
 
   // top: small brand mark only, so the face stays clear
-  const top = 100 * u;
+  const top = 118 * u;
   if (logo && logo.complete && logo.naturalWidth) {
-    const lh = 64 * u, lw = Math.min((logo.naturalWidth / logo.naturalHeight) * lh, W * 0.45);
+    const lh = 104 * u, lw = Math.min((logo.naturalWidth / logo.naturalHeight) * lh, W * 0.5);
     ctx.drawImage(logo, (W - lw) / 2, top - lh / 2, lw, lh);
   } else {
     ctx.font = `800 ${32 * u}px ${FONT}`;
@@ -72,7 +72,7 @@ export function drawBrandFrame(ctx, W, H, C, t, logo) {
   y += 92 * u;
   ctx.font = `italic 900 ${64 * u}px ${FONT}`;
   g = ctx.createLinearGradient(W * 0.25, 0, W * 0.75, 0);
-  g.addColorStop(0, accent); g.addColorStop(1, highlight);
+  g.addColorStop(0, highlight); g.addColorStop(1, text);
   ctx.fillStyle = g;
   ctx.fillText(C.hashtag, W / 2, y, W - 160 * u);
 

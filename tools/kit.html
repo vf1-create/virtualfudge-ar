@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Season AR · Promo Kit</title>
+  <title>Virtual Fudge Promo Kit</title>
   <meta name="robots" content="noindex">
-  <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="../assets/icon-64.png" type="image/png">
   <style>
-    :root { --primary:#0B1B3F; --accent:#3BD5FF; --highlight:#FFC93C; }
+    :root { --primary:#240D02; --accent:#AE6B39; --highlight:#F3D3AC; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f4f6fb; color: #111827; }
     main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
@@ -104,6 +104,8 @@
   $('#url').value = localStorageGet('kit-url') || (location.hostname === 'localhost' ? '' : defaultUrl);
   $('#url').placeholder = defaultUrl;
   let size = [1080, 1350];
+  const logo = new Image();
+  if (C.logo) { logo.src = new URL(C.logo, new URL('../', location.href)).href; logo.onload = () => drawPoster(); }
 
   function localStorageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
   function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
@@ -143,19 +145,24 @@
 
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = text;
     const top = H * 0.1;
-    ctx.font = `800 ${34 * u}px ${FONT}`; ctx.globalAlpha = 0.85; ctx.fillText(C.brand.split('').join(String.fromCharCode(8202)), W / 2, top); ctx.globalAlpha = 1;
+    if (logo.complete && logo.naturalWidth) {
+      const lh = 150 * u, lw = (logo.naturalWidth / logo.naturalHeight) * lh;
+      ctx.drawImage(logo, W / 2 - lw / 2, top - lh / 2 - 30 * u, lw, lh);
+    } else {
+      ctx.font = `800 ${34 * u}px ${FONT}`; ctx.globalAlpha = 0.85; ctx.fillText(C.brand.split('').join(String.fromCharCode(8202)), W / 2, top); ctx.globalAlpha = 1;
+    }
     ctx.font = `italic 900 ${96 * u}px ${FONT}`;
-    wrap(ctx, C.seasonTitle, W / 2, top + 130 * u, W - 160 * u, 100 * u);
+    wrap(ctx, C.seasonTitle, W / 2, top + 200 * u, W - 160 * u, 100 * u);
 
     // countdown pill
     const label = countdownLabel(C);
     ctx.font = `italic 900 ${40 * u}px ${FONT}`;
-    const pw = ctx.measureText(label).width + 70 * u, py = top + 330 * u;
+    const pw = ctx.measureText(label).width + 70 * u, py = top + 370 * u;
     rr(ctx, W / 2 - pw / 2, py - 34 * u, pw, 68 * u, 34 * u); ctx.fillStyle = highlight; ctx.fill();
     ctx.fillStyle = primary; ctx.fillText(label, W / 2, py + 2 * u);
 
     // QR card
-    const qs = Math.min(W * 0.48, H * 0.32), qy = H * 0.5 - qs / 2 + 70 * u;
+    const qs = Math.min(W * 0.48, H * 0.29), qy = H * 0.5 - qs / 2 + 90 * u;
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40 * u; ctx.shadowOffsetY = 12 * u;
     rr(ctx, W / 2 - qs / 2 - 24 * u, qy - 24 * u, qs + 48 * u, qs + 48 * u, 36 * u); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
     drawQR(cv, finalUrl(), W / 2 - qs / 2, qy, qs, { quiet: 1 });
@@ -165,7 +172,7 @@
     ctx.font = `700 ${34 * u}px system-ui, sans-serif`; ctx.globalAlpha = 0.85;
     ctx.fillText('the AR selfie filter. No app needed.', W / 2, qy + qs + 170 * u); ctx.globalAlpha = 1;
 
-    g = ctx.createLinearGradient(W * 0.25, 0, W * 0.75, 0); g.addColorStop(0, accent); g.addColorStop(1, highlight);
+    g = ctx.createLinearGradient(W * 0.25, 0, W * 0.75, 0); g.addColorStop(0, highlight); g.addColorStop(1, text);
     ctx.fillStyle = g; ctx.font = `italic 900 ${72 * u}px ${FONT}`;
     ctx.fillText(C.hashtag, W / 2, H - 120 * u, W - 160 * u);
   }

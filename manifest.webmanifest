@@ -1,13 +1,21 @@
 {
   "name": "Virtual Fudge AR",
-  "short_name": "Season AR",
+  "short_name": "VF AR",
   "start_url": "./?src=homescreen",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B1B3F",
-  "theme_color": "#0B1B3F",
+  "background_color": "#240D02",
+  "theme_color": "#240D02",
   "icons": [
-    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml" },
-    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
   ]
 }

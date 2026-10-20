@@ -2,31 +2,31 @@
 //  Rebrand everything here. No build step: edit, save, refresh.
 // ─────────────────────────────────────────────────────────────
 export default {
-  brand: 'VIRTUAL FUDGE',           // small text at the top of the frame
-  logo: null,                       // optional: './assets/logo.png' (transparent PNG, wide)
+  brand: 'VIRTUAL FUDGE',           // fallback text if the logo can't load
+  logo: './assets/logo.png',        // transparent PNG, white "VIRTUAL" for dark backgrounds
 
-  seasonTitle: 'THE SEASON STARTS NOW',
-  seasonShort: "SEASON '26",        // printed on the beanie / headband
-  seasonStart: '2026-11-14T19:00:00', // drives the live "N DAYS TO GO" countdown
-  startLabel: 'OPENING NIGHT · NOV 14',
-  liveLabel: "IT'S GAME TIME",      // shown once seasonStart has passed
+  seasonTitle: 'THE SWEETEST SEASON',
+  seasonShort: 'VIRTUAL FUDGE',     // printed on the beanie / headband
+  seasonStart: '',                  // set a date (e.g. '2026-12-25T00:00:00') to show a live "N DAYS TO GO" countdown
+  startLabel: 'HAPPY HOLIDAYS 2026',// shown in the pill when there's no countdown
+  liveLabel: "IT'S HERE",           // shown once seasonStart has passed
 
-  hashtag: '#SeasonReady',
-  shareText: 'Ready for the new season 🔥',
+  hashtag: '#VirtualFudge',
+  shareText: 'Got the Virtual Fudge AR treatment 🍫✨ Bespoke AR studio, NYC.',
   shareUrl: '',                     // link added to shares; blank = this page's URL
 
-  ctaLabel: 'Get your tickets',     // button on the result screen; blank to hide
-  ctaUrl: 'https://example.com',
+  ctaLabel: 'Build your AR with Virtual Fudge', // button on the result screen; blank to hide
+  ctaUrl: 'https://virtualfudge.com',
 
-  colors: {
-    primary: '#0B1B3F',   // deep base color
-    accent: '#3BD5FF',    // bright pop color
-    highlight: '#FFC93C', // second pop color (gold)
+  colors: {               // from the Virtual Fudge logo gradient
+    primary: '#240D02',   // dark chocolate
+    accent: '#AE6B39',    // caramel
+    highlight: '#F3D3AC', // light caramel cream (pills, buttons)
     text: '#FFFFFF',
   },
 
-  // Filters, in order. Available: 'snow', 'mvp', 'gameface', 'shades'
-  filters: ['gameface', 'snow', 'mvp', 'shades'],
+  // Filters, in order. Available: 'vfshades', 'snow', 'mvp', 'gameface', 'shades'
+  filters: ['vfshades', 'snow', 'mvp', 'shades'],
 
   output: { width: 1080, height: 1920 }, // 9:16 = Stories / Reels / TikTok. Use 720x1280 for older phones.
   maxVideoSeconds: 15,
