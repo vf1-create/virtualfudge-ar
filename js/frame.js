@@ -1,99 +1,126 @@
 // Branded overlay drawn on top of every frame, so it's baked into photos and videos.
-import { FONT, hexA, roundRect } from './effects.js';
+// Layout: the camera image as a print, sitting on a paper caption strip, like a
+// page of the Virtual Fudge brochure.
+import { DISPLAY, MONO, hexA } from './effects.js';
+
+export const BAND = 0.74; // caption strip starts at 74% of the height
 
 export function countdownLabel(C, now = new Date()) {
   if (!C.seasonStart) return C.startLabel || '';
   const start = new Date(C.seasonStart);
-  if (start <= now) return C.liveLabel || 'NOW LIVE';
+  if (start <= now) return C.liveLabel || "It's here";
   const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const d1 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
   const days = Math.round((d1 - d0) / 864e5);
-  if (days === 0) return 'TONIGHT';
-  if (days === 1) return 'TOMORROW';
-  return `${days} DAYS TO GO`;
+  if (days === 0) return 'Tonight';
+  if (days === 1) return 'Tomorrow';
+  return `${days} days to go`;
 }
 
-export function drawBrandFrame(ctx, W, H, C, t, logo) {
+let grain = null;
+function grainPattern(ctx) {
+  if (!grain) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 192;
+    const g = c.getContext('2d'), img = g.createImageData(192, 192);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = Math.random() * 255;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 14;
+    }
+    g.putImageData(img, 0, 0);
+    grain = c;
+  }
+  return ctx.createPattern(grain, 'repeat');
+}
+
+function brackets(ctx, x0, y0, x1, y1, arm) {
+  ctx.beginPath();
+  for (const [x, y, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
+    ctx.moveTo(x, y + dy * arm); ctx.lineTo(x, y); ctx.lineTo(x + dx * arm, y);
+  }
+  ctx.stroke();
+}
+
+// faint wireframe torus, like the meshes floating on the brochure pages
+function mesh(ctx, cx, cy, R, r, tilt) {
+  for (let k = 0; k < 22; k++) {
+    const a = (k / 22) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.ellipse(cx + Math.cos(a) * R, cy + Math.sin(a) * R * tilt, r * Math.abs(Math.cos(a)) + r * 0.25, r, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  for (const s of [R - r, R, R + r]) { ctx.beginPath(); ctx.ellipse(cx, cy, s, s * tilt, 0, 0, Math.PI * 2); ctx.stroke(); }
+}
+
+function fits(ctx, str, max) { return ctx.measureText(str).width <= max; }
+
+export function drawBrandFrame(ctx, W, H, C, t, logo, logoPaper) {
   const u = W / 1080;
-  const { primary, accent, highlight, text } = C.colors;
+  const { paper, ink, brand, text } = C.colors;
+  const y0 = Math.round(H * BAND);
+  const pad = 72 * u;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-  // scrims for legibility (light at the top, deeper behind the lower third)
-  let g = ctx.createLinearGradient(0, 0, 0, H * 0.12);
-  g.addColorStop(0, hexA(primary, 0.7)); g.addColorStop(1, hexA(primary, 0));
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.12);
-  g = ctx.createLinearGradient(0, H, 0, H * 0.6);
-  g.addColorStop(0, hexA(primary, 0.95)); g.addColorStop(0.55, hexA(primary, 0.6)); g.addColorStop(1, hexA(primary, 0));
-  ctx.fillStyle = g; ctx.fillRect(0, H * 0.6, W, H * 0.4);
+  // a whisper of shade at the top so the white logo reads on bright backgrounds
+  let g = ctx.createLinearGradient(0, 0, 0, 240 * u);
+  g.addColorStop(0, 'rgba(20,10,4,.32)'); g.addColorStop(1, 'rgba(20,10,4,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, 240 * u);
 
-  // gradient border
-  const inset = 26 * u;
-  g = ctx.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, accent); g.addColorStop(0.5, highlight); g.addColorStop(1, accent);
-  ctx.strokeStyle = g; ctx.lineWidth = 10 * u;
-  roundRect(ctx, inset, inset, W - inset * 2, H - inset * 2, 56 * u);
-  ctx.stroke();
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  // top: small brand mark only, so the face stays clear
-  const top = 118 * u;
   if (logo && logo.complete && logo.naturalWidth) {
-    const lh = 104 * u, lw = Math.min((logo.naturalWidth / logo.naturalHeight) * lh, W * 0.5);
-    ctx.drawImage(logo, (W - lw) / 2, top - lh / 2, lw, lh);
-  } else {
-    ctx.font = `800 ${32 * u}px ${FONT}`;
-    ctx.fillStyle = hexA(text, 0.92);
-    spaced(ctx, C.brand, W / 2, top, 8 * u);
+    const lh = 82 * u, lw = (logo.naturalWidth / logo.naturalHeight) * lh;
+    ctx.drawImage(logo, (W - lw) / 2, 64 * u, lw, lh);
   }
 
-  // lower third: countdown pill → title → hashtag (kept above the live camera controls)
-  const label = countdownLabel(C);
-  let y = H * 0.705;
-  ctx.font = `italic 900 ${38 * u}px ${FONT}`;
-  const pw = ctx.measureText(label).width + 64 * u, ph = 64 * u;
-  const pulse = 1 + Math.sin(t * 4) * 0.025;
+  // viewfinder corners on the photo
+  ctx.strokeStyle = hexA(text, 0.95);
+  ctx.lineWidth = 4 * u;
+  ctx.lineCap = 'butt';
+  brackets(ctx, 40 * u, 40 * u, W - 40 * u, y0 - 40 * u, 64 * u);
+
+  // paper caption strip
+  ctx.fillStyle = paper; ctx.fillRect(0, y0, W, H - y0);
+  ctx.fillStyle = grainPattern(ctx); ctx.fillRect(0, y0, W, H - y0);
+  ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(0, y0, W, 2 * u);
+
   ctx.save();
-  ctx.translate(W / 2, y); ctx.scale(pulse, pulse);
-  roundRect(ctx, -pw / 2, -ph / 2, pw, ph, ph / 2);
-  ctx.fillStyle = highlight; ctx.fill();
-  ctx.fillStyle = primary; ctx.fillText(label, 0, 2 * u);
+  ctx.beginPath(); ctx.rect(0, y0, W, H - y0); ctx.clip();
+  ctx.strokeStyle = 'rgba(35,31,32,.10)'; ctx.lineWidth = 1.5 * u;
+  mesh(ctx, W * 0.93, y0 + 175 * u, 150 * u, 46 * u, 0.42);
   ctx.restore();
 
-  y += 105 * u;
-  ctx.font = `italic 900 ${88 * u}px ${FONT}`;
-  ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 18 * u; ctx.shadowOffsetY = 4 * u;
-  ctx.fillStyle = text;
-  ctx.fillText(C.seasonTitle, W / 2, y, W - 120 * u);
-  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = ink; ctx.lineWidth = 3 * u;
+  brackets(ctx, 32 * u, y0 + 32 * u, W - 32 * u, H - 32 * u, 30 * u);
 
-  y += 92 * u;
-  ctx.font = `italic 900 ${64 * u}px ${FONT}`;
-  g = ctx.createLinearGradient(W * 0.25, 0, W * 0.75, 0);
-  g.addColorStop(0, highlight); g.addColorStop(1, text);
-  ctx.fillStyle = g;
-  ctx.fillText(C.hashtag, W / 2, y, W - 160 * u);
-
-  // very bottom (sits under the shutter while live, shows in the saved photo/video)
-  if (C.startLabel && label !== C.startLabel) {
-    ctx.font = `800 ${30 * u}px ${FONT}`;
-    ctx.fillStyle = hexA(text, 0.85);
-    spaced(ctx, C.startLabel, W / 2, H - 95 * u, 4 * u);
-  }
-
-  ctx.restore();
-}
-
-// letter-spaced centered text (ctx.letterSpacing isn't everywhere yet)
-function spaced(ctx, str, cx, y, gap) {
-  const chars = [...str];
-  const widths = chars.map((c) => ctx.measureText(c).width);
-  const total = widths.reduce((a, b) => a + b, 0) + gap * (chars.length - 1);
-  let x = cx - total / 2;
-  const align = ctx.textAlign;
+  // text, left-aligned like the brochure
   ctx.textAlign = 'left';
-  chars.forEach((c, i) => { ctx.fillText(c, x, y); x += widths[i] + gap; });
-  ctx.textAlign = align;
+  ctx.textBaseline = 'alphabetic';
+  const maxW = W - pad * 2;
+
+  const label = countdownLabel(C);
+  const kicker = [C.kicker, label].filter(Boolean).join(' · ');
+  ctx.fillStyle = brand;
+  ctx.font = `700 ${26 * u}px ${DISPLAY}`;
+  ctx.fillText(kicker, pad, y0 + 96 * u, maxW);
+
+  let size = 62;
+  ctx.font = `400 ${size * u}px ${DISPLAY}`;
+  while (size > 40 && !fits(ctx, C.seasonTitle, maxW)) ctx.font = `400 ${--size * u}px ${DISPLAY}`;
+  ctx.fillText(C.seasonTitle, pad, y0 + 170 * u, maxW);
+
+  ctx.fillStyle = ink;
+  ctx.font = `400 ${29 * u}px ${MONO}`;
+  ctx.fillText([C.hashtag, C.website].filter(Boolean).join('  ·  '), pad, y0 + 232 * u, maxW);
+
+  // full-color logo in the bottom corner of the strip
+  if (logoPaper && logoPaper.complete && logoPaper.naturalWidth) {
+    const lh = 92 * u, lw = (logoPaper.naturalWidth / logoPaper.naturalHeight) * lh;
+    ctx.drawImage(logoPaper, W - pad - lw, H - 68 * u - lh, lw, lh);
+  }
+  ctx.fillStyle = hexA(ink, 0.6);
+  ctx.font = `400 ${22 * u}px ${MONO}`;
+  ctx.fillText('Made in AR', pad, H - 82 * u);
+
+  ctx.restore();
 }

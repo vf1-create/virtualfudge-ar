@@ -6,30 +6,32 @@
   <title>Virtual Fudge Promo Kit</title>
   <meta name="robots" content="noindex">
   <link rel="icon" href="../assets/icon-64.png" type="image/png">
+  <link rel="stylesheet" href="../vendor/fonts/fonts.css">
   <style>
-    :root { --primary:#240D02; --accent:#AE6B39; --highlight:#F3D3AC; }
+    :root { --paper:#F3F3F3; --ink:#231F20; --brand:#82563B; --accent:#AE6B39; --line:rgba(35,31,32,.16); --muted:rgba(35,31,32,.64); }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f4f6fb; color: #111827; }
-    main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
-    h1 { margin: 0 0 4px; font-size: 28px; }
-    .sub { margin: 0 0 24px; color: #4b5563; }
-    .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; align-items: start; }
+    body { margin: 0; font-family: "Roboto Mono", ui-monospace, Menlo, monospace; background: var(--paper); color: var(--ink); }
+    main { max-width: 1000px; margin: 0 auto; padding: 40px max(16px, env(safe-area-inset-right)) 64px max(16px, env(safe-area-inset-left)); }
+    h1 { margin: 0 0 6px; font-family: "Syncopate", Arial, sans-serif; font-weight: 400; font-size: 30px; color: var(--brand); }
+    .sub { margin: 0 0 28px; color: var(--muted); font-size: 13.5px; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
     @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
-    .card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-    .card h2 { margin: 0 0 12px; font-size: 17px; }
-    label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; color: #374151; }
-    input, select { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; font: inherit; }
+    .card { background: #fff; border-radius: 2px; padding: 22px; box-shadow: inset 0 0 0 1px var(--line); }
+    .card h2 { margin: 0 0 14px; font-family: "Syncopate", Arial, sans-serif; font-weight: 700; font-size: 13px; color: var(--brand); }
+    label { display: block; font-size: 12px; margin: 14px 0 6px; color: var(--muted); }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 2px; font: inherit; font-size: 13.5px; background: var(--paper); color: var(--ink); }
     .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-    button { padding: 10px 16px; border: 0; border-radius: 10px; font: inherit; font-weight: 700; cursor: pointer; background: var(--primary); color: #fff; }
-    button.alt { background: #e5e7eb; color: #111827; }
-    code { background: #eef2f7; padding: 2px 6px; border-radius: 6px; font-size: 12px; word-break: break-all; }
-    canvas { width: 100%; height: auto; border-radius: 12px; display: block; background: #fff; }
-    #qrPreview { max-width: 220px; border: 1px solid #e5e7eb; }
-    .note { font-size: 13px; color: #4b5563; margin: 10px 0 0; }
-    #nfcStatus { font-weight: 600; }
-    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-    .tabs button { background: #e5e7eb; color: #111827; padding: 8px 12px; font-size: 14px; }
-    .tabs button[aria-selected="true"] { background: var(--primary); color: #fff; }
+    button { padding: 11px 16px; border: 0; border-radius: 2px; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; background: var(--ink); color: var(--paper); }
+    button.alt { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+    code { background: var(--paper); padding: 2px 6px; border-radius: 2px; font-size: 12px; word-break: break-all; }
+    canvas { width: 100%; height: auto; display: block; background: var(--paper); }
+    #poster { box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 12px 36px rgba(35,31,32,.14); }
+    #qrPreview { max-width: 220px; border: 1px solid var(--line); }
+    .note { font-size: 12.5px; line-height: 1.6; color: var(--muted); margin: 10px 0 0; }
+    #nfcStatus { color: var(--ink); }
+    .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tabs button { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); padding: 8px 12px; font-size: 12.5px; }
+    .tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); box-shadow: none; }
   </style>
 </head>
 <body>
@@ -97,7 +99,7 @@
   import { countdownLabel } from '../js/frame.js';
 
   const $ = (s) => document.querySelector(s);
-  const FONT = '"Arial Black", "Helvetica Neue", Helvetica, system-ui, sans-serif';
+  const DISPLAY = '"Syncopate", Arial, sans-serif', MONO = '"Roboto Mono", ui-monospace, Menlo, monospace';
   for (const [k, v] of Object.entries(C.colors)) document.documentElement.style.setProperty(`--${k}`, v);
 
   const defaultUrl = new URL('../', location.href).href;
@@ -105,7 +107,9 @@
   $('#url').placeholder = defaultUrl;
   let size = [1080, 1350];
   const logo = new Image();
-  if (C.logo) { logo.src = new URL(C.logo, new URL('../', location.href)).href; logo.onload = () => drawPoster(); }
+  const logoSrc = C.logoOnPaper || C.logo;
+  if (logoSrc) { logo.src = new URL(logoSrc, new URL('../', location.href)).href; logo.onload = () => drawPoster(); }
+  document.fonts.ready.then(() => Promise.all(['400 40px Syncopate', '700 40px Syncopate', '400 20px "Roboto Mono"'].map((f) => document.fonts.load(f)))).then(() => drawPoster());
 
   function localStorageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
   function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
@@ -117,64 +121,94 @@
     return u.href;
   }
 
-  function drawQR(cv, url, x, y, s, { dark = C.colors.primary, light = '#fff', quiet = 2 } = {}) {
+  function drawQR(cv, url, x, y, s, { quiet = 2, light = C.colors.paper } = {}) {
     const qr = qrcode(0, 'Q'); qr.addData(url); qr.make();
     const n = qr.getModuleCount(), cell = s / (n + quiet * 2), ctx = cv.getContext('2d');
+    const finder = (r, c) => (r < 7 && (c < 7 || c >= n - 7)) || (r >= n - 7 && c < 7);
     ctx.fillStyle = light; ctx.fillRect(x, y, s, s);
-    ctx.fillStyle = dark;
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
-      if (qr.isDark(r, c)) ctx.fillRect(x + (c + quiet) * cell, y + (r + quiet) * cell, Math.ceil(cell), Math.ceil(cell));
+      if (!qr.isDark(r, c)) continue;
+      ctx.fillStyle = finder(r, c) ? C.colors.brand : C.colors.ink; // brown finder squares, like the brochure QRs
+      ctx.fillRect(x + (c + quiet) * cell, y + (r + quiet) * cell, Math.ceil(cell), Math.ceil(cell));
     }
   }
 
-  function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+  let grain = null;
+  function grainPattern(ctx) {
+    if (!grain) {
+      grain = document.createElement('canvas'); grain.width = grain.height = 192;
+      const g = grain.getContext('2d'), img = g.createImageData(192, 192);
+      for (let i = 0; i < img.data.length; i += 4) { const v = Math.random() * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 14; }
+      g.putImageData(img, 0, 0);
+    }
+    return ctx.createPattern(grain, 'repeat');
+  }
 
+  function brackets(ctx, x0, y0, x1, y1, arm) {
+    ctx.beginPath();
+    for (const [x, y, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
+      ctx.moveTo(x, y + dy * arm); ctx.lineTo(x, y); ctx.lineTo(x + dx * arm, y);
+    }
+    ctx.stroke();
+  }
+
+  function mesh(ctx, cx, cy, R, r, tilt) {
+    for (let k = 0; k < 24; k++) {
+      const a = (k / 24) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.ellipse(cx + Math.cos(a) * R, cy + Math.sin(a) * R * tilt, r * Math.abs(Math.cos(a)) + r * 0.25, r, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    for (const s of [R - r, R, R + r]) { ctx.beginPath(); ctx.ellipse(cx, cy, s, s * tilt, 0, 0, Math.PI * 2); ctx.stroke(); }
+  }
+
+  // A page in the brochure's language: paper, viewfinder corners, Syncopate + Roboto Mono, left-aligned
   function drawPoster() {
     const [W, H] = size, cv = $('#poster'), ctx = cv.getContext('2d'), u = W / 1080;
     cv.width = W; cv.height = H;
-    const { primary, accent, highlight, text } = C.colors;
-    ctx.fillStyle = primary; ctx.fillRect(0, 0, W, H);
-    let g = ctx.createRadialGradient(W * 0.2, H * 0.15, 0, W * 0.2, H * 0.15, W * 0.9);
-    g.addColorStop(0, accent + '88'); g.addColorStop(1, accent + '00');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    g = ctx.createRadialGradient(W * 0.9, H * 0.85, 0, W * 0.9, H * 0.85, W * 0.8);
-    g.addColorStop(0, highlight + '66'); g.addColorStop(1, highlight + '00');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, accent); g.addColorStop(0.5, highlight); g.addColorStop(1, accent);
-    ctx.strokeStyle = g; ctx.lineWidth = 12 * u; rr(ctx, 30 * u, 30 * u, W - 60 * u, H - 60 * u, 56 * u); ctx.stroke();
+    const { paper, ink, brand } = C.colors;
+    const pad = 110 * u, maxW = W - pad * 2;
+    ctx.fillStyle = paper; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = grainPattern(ctx); ctx.fillRect(0, 0, W, H);
 
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = text;
-    const top = H * 0.1;
+    ctx.strokeStyle = 'rgba(35,31,32,.10)'; ctx.lineWidth = 1.6 * u;
+    mesh(ctx, W * 0.86, H * 0.44, 230 * u, 70 * u, 0.42);
+
+    ctx.strokeStyle = ink; ctx.lineWidth = 4 * u;
+    brackets(ctx, 48 * u, 48 * u, W - 48 * u, H - 48 * u, 46 * u);
+
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    let y = 130 * u;
     if (logo.complete && logo.naturalWidth) {
-      const lh = 150 * u, lw = (logo.naturalWidth / logo.naturalHeight) * lh;
-      ctx.drawImage(logo, W / 2 - lw / 2, top - lh / 2 - 30 * u, lw, lh);
+      const lh = 130 * u, lw = (logo.naturalWidth / logo.naturalHeight) * lh;
+      ctx.drawImage(logo, pad, y, lw, lh);
+      y += lh;
     } else {
-      ctx.font = `800 ${34 * u}px ${FONT}`; ctx.globalAlpha = 0.85; ctx.fillText(C.brand.split('').join(String.fromCharCode(8202)), W / 2, top); ctx.globalAlpha = 1;
+      ctx.fillStyle = ink; ctx.font = `700 ${34 * u}px ${DISPLAY}`; ctx.fillText(C.brand, pad, y + 40 * u); y += 60 * u;
     }
-    ctx.font = `italic 900 ${96 * u}px ${FONT}`;
-    wrap(ctx, C.seasonTitle, W / 2, top + 200 * u, W - 160 * u, 100 * u);
 
-    // countdown pill
-    const label = countdownLabel(C);
-    ctx.font = `italic 900 ${40 * u}px ${FONT}`;
-    const pw = ctx.measureText(label).width + 70 * u, py = top + 370 * u;
-    rr(ctx, W / 2 - pw / 2, py - 34 * u, pw, 68 * u, 34 * u); ctx.fillStyle = highlight; ctx.fill();
-    ctx.fillStyle = primary; ctx.fillText(label, W / 2, py + 2 * u);
+    y += 120 * u;
+    ctx.fillStyle = brand;
+    ctx.font = `700 ${30 * u}px ${DISPLAY}`;
+    ctx.fillText([C.kicker, countdownLabel(C)].filter(Boolean).join(' · '), pad, y, maxW);
+    y += 90 * u;
+    ctx.font = `400 ${78 * u}px ${DISPLAY}`;
+    y = wrap(ctx, C.seasonTitle, pad, y, maxW * 0.92, 92 * u) + 70 * u;
 
-    // QR card
-    const qs = Math.min(W * 0.48, H * 0.29), qy = H * 0.5 - qs / 2 + 90 * u;
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 40 * u; ctx.shadowOffsetY = 12 * u;
-    rr(ctx, W / 2 - qs / 2 - 24 * u, qy - 24 * u, qs + 48 * u, qs + 48 * u, 36 * u); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
-    drawQR(cv, finalUrl(), W / 2 - qs / 2, qy, qs, { quiet: 1 });
+    ctx.fillStyle = ink;
+    ctx.font = `400 ${33 * u}px ${MONO}`;
+    wrap(ctx, 'Scan or tap to try our holiday AR selfie filter. No app needed.', pad, y, maxW * 0.78, 52 * u);
 
-    ctx.fillStyle = text; ctx.font = `italic 900 ${58 * u}px ${FONT}`;
-    ctx.fillText('SCAN OR TAP TO TRY', W / 2, qy + qs + 110 * u);
-    ctx.font = `700 ${34 * u}px system-ui, sans-serif`; ctx.globalAlpha = 0.85;
-    ctx.fillText('the AR selfie filter. No app needed.', W / 2, qy + qs + 170 * u); ctx.globalAlpha = 1;
-
-    g = ctx.createLinearGradient(W * 0.25, 0, W * 0.75, 0); g.addColorStop(0, highlight); g.addColorStop(1, text);
-    ctx.fillStyle = g; ctx.font = `italic 900 ${72 * u}px ${FONT}`;
-    ctx.fillText(C.hashtag, W / 2, H - 120 * u, W - 160 * u);
+    // QR bottom-right, caption to its left, as on the brochure cover
+    const qs = Math.min(W * 0.34, H * 0.25);
+    const qx = W - pad - qs, qy = H - 120 * u - qs;
+    drawQR(cv, finalUrl(), qx, qy, qs, { quiet: 1 });
+    ctx.fillStyle = ink; ctx.font = `400 ${30 * u}px ${MONO}`;
+    ctx.fillText('Scan to try →', pad, qy + qs - 104 * u);
+    ctx.fillStyle = brand;
+    ctx.fillText(C.hashtag, pad, qy + qs - 52 * u);
+    ctx.fillStyle = 'rgba(35,31,32,.62)'; ctx.font = `400 ${26 * u}px ${MONO}`;
+    ctx.fillText(C.website || '', pad, qy + qs);
   }
 
   function wrap(ctx, str, x, y, maxW, lh) {
@@ -185,7 +219,8 @@
       if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
     }
     lines.push(line);
-    lines.forEach((l, i) => ctx.fillText(l, x, y + (i - (lines.length - 1) / 2) * lh));
+    lines.forEach((l, i) => ctx.fillText(l, x, y + i * lh));
+    return y + (lines.length - 1) * lh;
   }
 
   function refresh() {

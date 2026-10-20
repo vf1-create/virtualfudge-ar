@@ -3,35 +3,42 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="#240D02">
+  <meta name="theme-color" content="#F3F3F3">
   <title>Virtual Fudge AR</title>
-  <!-- Social link previews: update these to your brand + absolute URL -->
-  <meta name="description" content="Try on Virtual Fudge AR: Fudge Shades, a holiday beanie and more. Snap a selfie or video and share it. No app needed.">
-  <meta property="og:title" content="Virtual Fudge AR: The Sweetest Season 🍫">
-  <meta property="og:description" content="Tap, pick a filter, snap a selfie, share it. No app needed.">
+  <!-- Social link previews: switch og:image to an absolute https URL once the site is live -->
+  <meta name="description" content="Try on Virtual Fudge AR: fudge shades, a digital twin, a little snow. Snap a selfie or video and share it. No app needed.">
+  <meta property="og:title" content="Virtual Fudge AR · The Sweetest Season">
+  <meta property="og:description" content="A holiday AR selfie from Virtual Fudge, the bespoke AR studio. Scan, snap, share. No app needed.">
   <meta property="og:image" content="assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="assets/icon-64.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/icon-180.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="modulepreload" href="vendor/mediapipe/vision_bundle.mjs">
+  <link rel="preload" href="vendor/fonts/Syncopate-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="vendor/fonts/RobotoMono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="vendor/fonts/fonts.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- 1. Intro -->
-  <section id="intro" class="screen active">
-    <div class="glow"></div>
+  <!-- 1. Intro: a page from the brochure -->
+  <section id="intro" class="screen paper active">
+    <span class="corners" aria-hidden="true"></span>
+    <svg class="mesh" viewBox="0 0 400 220" aria-hidden="true"><g id="meshRings"></g></svg>
     <div class="intro-card">
-      <p class="brand" data-text="brand"></p>
-      <h1 data-text="seasonTitle"></h1>
-      <p class="pill" id="countdown"></p>
-      <button id="startBtn" class="btn primary big">Tap to start AR&nbsp;✨</button>
-      <p class="fine">Runs entirely on your device. Nothing is uploaded unless you share it.</p>
-      <div id="desktopQR" class="qr-panel" hidden>
-        <canvas id="qr" width="232" height="232" aria-label="QR code to open this page on your phone"></canvas>
-        <p><strong>Best on your phone.</strong><br>Scan to open.</p>
+      <img class="logo" src="assets/logo-paper.png" alt="Virtual Fudge" width="1200" height="575">
+      <div class="headline">
+        <p class="kicker"><span data-text="kicker"></span> · <span id="countdown"></span></p>
+        <h1 data-text="seasonTitle"></h1>
       </div>
-      <p class="tag" data-text="hashtag"></p>
+      <p class="lede" data-text="intro"></p>
+      <button id="startBtn" class="btn primary">Open the camera <span aria-hidden="true">→</span></button>
+      <p class="fine">Runs on your device. Nothing is uploaded unless you share it.</p>
+      <div id="desktopQR" class="qr-panel" hidden>
+        <canvas id="qr" width="264" height="264" aria-label="QR code to open this page on your phone"></canvas>
+        <p>Best on your phone.<br>Scan to open.</p>
+      </div>
+      <p class="tag"><span data-text="hashtag"></span> · <span data-text="website"></span></p>
     </div>
   </section>
 
@@ -44,7 +51,11 @@
       <button id="flipBtn" class="icon-btn" aria-label="Switch camera">⇆</button>
     </div>
     <div id="hint" class="hint" hidden></div>
-    <div id="loading" class="loading"><div class="spinner"></div><p>Warming up the AR…</p></div>
+    <div id="loading" class="loading paper">
+      <img class="logo" src="assets/logo-paper.png" alt="" width="1200" height="575">
+      <div class="bar"><span></span></div>
+      <p>Warming up the camera…</p>
+    </div>
     <div class="bottombar">
       <div id="filters" class="filters" role="tablist"></div>
       <button id="shutter" class="shutter" aria-label="Tap for photo, hold for video"><span></span></button>
@@ -54,12 +65,13 @@
   </section>
 
   <!-- 3. Result -->
-  <section id="result" class="screen">
+  <section id="result" class="screen paper">
+    <span class="corners" aria-hidden="true"></span>
     <div id="resultMedia" class="result-media"></div>
     <div class="result-actions">
-      <button id="retakeBtn" class="btn ghost">↺ Retake</button>
-      <button id="saveBtn" class="btn ghost">⤓ Save</button>
-      <button id="shareBtn" class="btn primary">Share&nbsp;↗</button>
+      <button id="retakeBtn" class="btn ghost">Retake</button>
+      <button id="saveBtn" class="btn ghost">Save</button>
+      <button id="shareBtn" class="btn primary">Share <span aria-hidden="true">↗</span></button>
     </div>
     <a id="cta" class="cta" target="_blank" rel="noopener" hidden></a>
   </section>

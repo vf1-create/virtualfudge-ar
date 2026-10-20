@@ -4,8 +4,8 @@
   "start_url": "./?src=homescreen",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#240D02",
-  "theme_color": "#240D02",
+  "background_color": "#F3F3F3",
+  "theme_color": "#F3F3F3",
   "icons": [
     {
       "src": "assets/icon-512.png",

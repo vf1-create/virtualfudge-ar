@@ -46,6 +46,7 @@ export function facePose(lm, blend, toScreen) {
     mouthX: (lip1.x + lip2.x) / 2,
     mouthY: (lip1.y + lip2.y) / 2,
     jaw, smile,
+    pts: lm.map((p) => toScreen(p.x, p.y)),
   };
 }
 
@@ -65,6 +66,9 @@ export function smoothFaces(prev, next, k = 0.55) {
         let d = n.angle - best.angle;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         out.angle = best.angle + d * k;
+      } else if (key === 'pts') {
+        const a = best.pts, b = n.pts;
+        out.pts = a.length === b.length ? b.map((p, i) => ({ x: a[i].x + (p.x - a[i].x) * k, y: a[i].y + (p.y - a[i].y) * k })) : b;
       } else {
         out[key] = best[key] + (n[key] - best[key]) * k;
       }
@@ -84,11 +88,11 @@ function enter(ctx, f) {
 }
 
 // Canvas text misbehaves at tiny font sizes, so draw at 100px and scale down.
-function text(ctx, str, x, y, size, { weight = 900, align = 'center', fill = '#fff', maxWidth } = {}) {
+function text(ctx, str, x, y, size, { weight = 700, align = 'center', fill = '#fff', maxWidth } = {}) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(size / 100, size / 100);
-  ctx.font = `italic ${weight} 100px ${FONT}`;
+  ctx.font = `${weight} 100px ${FONT}`;
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
   ctx.fillStyle = fill;
@@ -96,12 +100,14 @@ function text(ctx, str, x, y, size, { weight = 900, align = 'center', fill = '#f
   ctx.restore();
 }
 
-export const FONT = '"Arial Black", "Helvetica Neue", Helvetica, system-ui, sans-serif';
+export const DISPLAY = '"Syncopate", "Arial", sans-serif';
+export const MONO = '"Roboto Mono", ui-monospace, Menlo, Consolas, monospace';
+export const FONT = DISPLAY;
 
 // ── Filters ──────────────────────────────────────────────────
 
 const snow = {
-  id: 'snow', name: 'Snow Day', emoji: '❄️', burst: 'snow', hint: 'Open your mouth for frosty breath 😮💨',
+  id: 'snow', name: 'Snow Day', emoji: '❄️', burst: 'snow', hint: 'Open your mouth for frosty breath',
   ambient(fx, dt, W, H, t) { fx.snowfall(dt, W, H, t, 110); },
   draw(ctx, f, t) {
     enter(ctx, f);
@@ -118,7 +124,7 @@ const snow = {
     ctx.clip();
     // knit stripes
     ctx.fillStyle = C.colors.accent;
-    for (let i = 0; i < 3; i++) ctx.fillRect(-1, cuffTop - 0.14 - i * 0.16, 2, 0.06);
+    ctx.fillRect(-1, cuffTop - 0.2, 2, 0.035);
     // ribs
     ctx.strokeStyle = 'rgba(0,0,0,.18)';
     ctx.lineWidth = 0.012;
@@ -141,11 +147,11 @@ const snow = {
     cg.addColorStop(0, 'rgba(255,255,255,.25)'); cg.addColorStop(1, 'rgba(0,0,0,.25)');
     ctx.fillStyle = cg; ctx.fillRect(-1, cuffTop, 2, 1);
     ctx.restore();
-    text(ctx, C.seasonShort, 0, (cuffTop + cuffBottom) / 2 + 0.005, 0.1, { fill: C.colors.primary, maxWidth: 0.9 });
+    text(ctx, C.seasonShort, 0, (cuffTop + cuffBottom) / 2 + 0.005, 0.075, { fill: C.colors.brand, maxWidth: 0.95 });
 
     // pom-pom (wobbles)
     const px = Math.sin(t * 3) * 0.02, py = cuffTop - domeRy - 0.05;
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = C.colors.highlight;
     for (let i = 0; i < 14; i++) {
       const a = (i / 14) * TAU;
       ctx.beginPath(); ctx.arc(px + Math.cos(a) * 0.09, py + Math.sin(a) * 0.09, 0.06, 0, TAU); ctx.fill();
@@ -153,10 +159,6 @@ const snow = {
     ctx.beginPath(); ctx.arc(px, py, 0.1, 0, TAU); ctx.fill();
     ctx.fillStyle = 'rgba(0,0,0,.08)';
     ctx.beginPath(); ctx.arc(px + 0.03, py + 0.04, 0.08, 0, TAU); ctx.fill();
-
-    // rosy cheeks
-    ctx.fillStyle = 'rgba(255,90,120,.22)';
-    for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * 0.27, 0.22, 0.08, 0.05, 0, 0, TAU); ctx.fill(); }
   },
 };
 
@@ -236,6 +238,80 @@ const gameface = {
   },
 };
 
+// ── Wireframe: the face as a live mesh, like the wireframes in the brochure ──
+let MESH = [];
+export function setMesh(connections) { MESH = connections || []; }
+
+const wireframe = {
+  id: 'wireframe', name: 'Wireframe', emoji: '◇', burst: 'pixels', hint: 'Open your mouth to scatter pixels',
+  draw(ctx, f, t) {
+    const pts = f.pts;
+    if (!pts || !MESH.length) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // a scan line sweeps down the face; edges near it glow brighter
+    const top = localToScreen(f, 0, f.top).y, bot = localToScreen(f, 0, f.chin).y;
+    const span = Math.max(1, bot - top);
+    const scan = top - span * 0.2 + ((t * 0.45) % 1) * span * 1.4;
+    const buckets = [[], [], [], []];
+    for (const { start, end } of MESH) {
+      const a = pts[start], b = pts[end];
+      if (!a || !b) continue;
+      const d = Math.abs((a.y + b.y) / 2 - scan) / (span * 0.09);
+      buckets[d < 0.6 ? 3 : d < 1.4 ? 2 : d < 3 ? 1 : 0].push(a, b);
+    }
+    const alphas = [0.5, 0.65, 0.85, 1];
+    const lw = Math.max(1.6, f.w * 0.0045);
+    const path = (seg) => { ctx.beginPath(); for (let j = 0; j < seg.length; j += 2) { ctx.moveTo(seg[j].x, seg[j].y); ctx.lineTo(seg[j + 1].x, seg[j + 1].y); } };
+    // a soft chocolate underline keeps the white mesh readable on any skin tone
+    ctx.lineWidth = lw * 2.2; ctx.strokeStyle = 'rgba(36,13,2,.18)';
+    path(buckets.flat()); ctx.stroke();
+    ctx.lineWidth = lw;
+    buckets.forEach((seg, i) => {
+      if (!seg.length) return;
+      ctx.strokeStyle = i === 3 ? '#ffffff' : `rgba(255,248,240,${alphas[i]})`;
+      path(seg); ctx.stroke();
+    });
+    // the scan line itself
+    const l = localToScreen(f, -0.62, 0), r = localToScreen(f, 0.62, 0);
+    const g = ctx.createLinearGradient(l.x, 0, r.x, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(l.x, scan - 1, r.x - l.x, 2);
+    enter(ctx, f);
+    viewfinder(ctx, f);
+  },
+};
+
+// ── Cocoa Snow: no props, just a warm grade and slow snow ──
+const cocoa = {
+  id: 'cocoa', name: 'Cocoa Snow', emoji: '☕', burst: 'snow', hint: 'Open your mouth to make it snow',
+  ambient(fx, dt, W, H, t) { fx.snowfall(dt, W, H, t, 140); },
+  grade(ctx, W, H) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.fillStyle = hexA(C.colors.highlight, 0.6);
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = hexA(C.colors.highlight, 0.08);
+    ctx.fillRect(0, 0, W, H);
+    const v = ctx.createRadialGradient(W / 2, H * 0.45, H * 0.3, W / 2, H * 0.45, H * 0.8);
+    v.addColorStop(0, 'rgba(36,13,2,0)'); v.addColorStop(1, 'rgba(36,13,2,.28)');
+    ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  },
+  draw() {},
+};
+
+function viewfinder(ctx, f) {
+  ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = 0.014; ctx.lineCap = 'butt';
+  const x0 = 0.6, yT = f.top - 0.12, yB = f.chin + 0.06, arm = 0.1;
+  ctx.beginPath();
+  for (const [x, y, dx, dy] of [[-x0, yT, 1, 1], [x0, yT, -1, 1], [-x0, yB, 1, -1], [x0, yB, -1, -1]]) {
+    ctx.moveTo(x, y + dy * arm); ctx.lineTo(x, y); ctx.lineTo(x + dx * arm, y);
+  }
+  ctx.stroke();
+}
+
 // The Virtual Fudge mark as wearable AR: striped fudge-bar shades that drip,
 // framed by the logo's viewfinder corners.
 const VF_STOPS = [[0, '#240d02'], [0.35, '#ae6b39'], [0.5, '#a96a3b'], [0.65, '#ae6b39'], [1, '#240d02']];
@@ -251,7 +327,7 @@ function lensPath(ctx, cx, s) { // s = +1 right lens, -1 left lens (outer side p
 }
 
 const vfshades = {
-  id: 'vfshades', name: 'Fudge Shades', emoji: '🍫', burst: 'fudge', hint: 'Open your mouth to make it drip 😮',
+  id: 'vfshades', name: 'Fudge Shades', emoji: '🍫', burst: 'fudge', hint: 'Open your mouth to make it drip',
   draw(ctx, f, t) {
     enter(ctx, f);
     const e = f.eyeHalf;
@@ -259,12 +335,7 @@ const vfshades = {
     VF_STOPS.forEach(([o, c]) => g.addColorStop(o, c));
     const bar = 0.025, step = 0.035;
 
-    // viewfinder corners around the face
-    ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = 0.022; ctx.lineCap = 'square';
-    const x0 = 0.6, yT = f.top - 0.12, yB = f.chin + 0.06, arm = 0.12;
-    for (const [x, y, dx, dy] of [[-x0, yT, 1, 1], [x0, yT, -1, 1], [-x0, yB, 1, -1], [x0, yB, -1, -1]]) {
-      ctx.beginPath(); ctx.moveTo(x, y + dy * arm); ctx.lineTo(x, y); ctx.lineTo(x + dx * arm, y); ctx.stroke();
-    }
+    viewfinder(ctx, f);
 
     // striped lenses + bridge
     ctx.save();
@@ -318,7 +389,7 @@ const shades = {
   },
 };
 
-const ALL = { vfshades, snow, mvp, gameface, shades };
+const ALL = { vfshades, wireframe, snow, cocoa, mvp, gameface, shades };
 export function getFilters(ids) { return ids.map((id) => ALL[id]).filter(Boolean); }
 
 // ── Particles (screen space) ─────────────────────────────────
@@ -400,6 +471,7 @@ export class Particles {
 function palette(type) {
   switch (type) {
     case 'snow': return ['#ffffff', '#eaf8ff', '#d4f3ff'];
+    case 'pixels': return [C.colors.highlight, C.colors.accent, '#ffffff'];
     case 'fudge': return ['#240d02', '#5a2a10', '#8d4f29', '#ae6b39', '#f3d3ac', '#ffffff'];
     case 'gold': return ['#FFD54A', '#FFC93C', '#FFF1B0', '#E0A800', '#ffffff'];
     case 'stars': return [C.colors.highlight, C.colors.accent, '#ffffff'];

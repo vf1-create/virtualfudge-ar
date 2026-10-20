@@ -15,13 +15,12 @@ All face tracking runs on the device (Google MediaPipe, vendored locally). Nothi
 
 | Filter | What it does | Mouth-open effect |
 |---|---|---|
-| 🍫 Fudge Shades | The Virtual Fudge logo as wearable AR: striped fudge-bar shades with live drips, framed by the logo's viewfinder corners | Fudge-chunk shower, and the drips stretch |
-| ❄️ Snow Day | Chocolate knit beanie with a VIRTUAL FUDGE cuff, rosy cheeks, falling snow | Frosty breath |
-| 👑 MVP Crown | Floating gold crown with orbiting sparkles | Gold confetti rain |
-| 🕶️ Star Shades | Wobbly star-shaped sunglasses | Star burst |
+| Fudge Shades | The Virtual Fudge logo as wearable AR: striped fudge-bar shades with live drips, framed by viewfinder corners | Fudge shower; the drips stretch |
+| Wireframe | The face as a live 3D mesh with a scan line sweeping down, like the wireframes in the brochure | Pixel scatter |
+| Snow Day | Chocolate knit beanie with a cream "Virtual Fudge" cuff, falling snow | Frosty breath |
+| Cocoa Snow | No props: a warm cream grade, soft vignette and slow snow | Snow burst |
 
-Every photo and video carries the Virtual Fudge frame: logo, a seasonal pill (or a live **“N DAYS TO GO”** countdown if you set `seasonStart`), the title and `#VirtualFudge`.
-The logo and colors come from the Virtual Fudge logo files (`LOGO/Logos – Transparent` in Drive). A 🏆 Game Face filter is also included but switched off; add `'gameface'` to `filters` to use it.
+Every photo and video is laid out like a page of the Virtual Fudge brochure: the camera image with viewfinder corners, on a paper caption strip with the kicker, the title in Syncopate, `#VirtualFudge · virtualfudge.com` in Roboto Mono and the full-color logo. Fonts are self-hosted in `vendor/fonts` (SIL Open Font License). Older filters (MVP Crown, Star Shades, Game Face) are still in the code; add their ids to `filters` to use them.
 Group selfies work too (up to 3 faces by default).
 
 ---

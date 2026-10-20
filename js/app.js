@@ -1,6 +1,6 @@
 import C from './config.js';
-import { setTheme, getFilters, facePose, smoothFaces, localToScreen, Particles } from './effects.js';
-import { drawBrandFrame, countdownLabel } from './frame.js';
+import { setTheme, setMesh, getFilters, facePose, smoothFaces, localToScreen, Particles } from './effects.js';
+import { drawBrandFrame, countdownLabel, BAND } from './frame.js';
 
 const W = C.output.width, H = C.output.height;
 const $ = (s) => document.querySelector(s);
@@ -31,17 +31,32 @@ if (src === 'debug' || location.hash === '#debug') window.__ar = state;
 
 root.style.setProperty('--ar', `${W} / ${H}`);
 for (const [k, v] of Object.entries(C.colors)) root.style.setProperty(`--${k}`, v);
-document.querySelector('meta[name="theme-color"]').content = C.colors.primary;
+document.querySelector('meta[name="theme-color"]').content = C.colors.paper;
 document.title = `${C.brand} · ${C.seasonTitle}`;
 document.querySelectorAll('[data-text]').forEach((el) => { el.textContent = C[el.dataset.text]; });
 $('#countdown').textContent = countdownLabel(C);
-if (C.logo) {
-  state.logo = new Image();
-  state.logo.src = C.logo;
-  const brand = document.querySelector('#intro .brand');
-  const img = Object.assign(document.createElement('img'), { src: C.logo, alt: C.brand, className: 'brand-logo' });
-  img.onload = () => brand.replaceWith(img);
+const loadImage = (src) => { if (!src) return null; const img = new Image(); img.src = src; return img; };
+state.logo = loadImage(C.logo);
+state.logoPaper = loadImage(C.logoOnPaper);
+if (C.logoOnPaper) document.querySelectorAll('img.logo').forEach((img) => { img.src = C.logoOnPaper; });
+drawMesh($('#meshRings'));
+
+// faint wireframe torus behind the intro, echoing the brochure pages
+function drawMesh(g) {
+  const cx = 230, cy = 120, R = 120, r = 36, tilt = 0.42, ns = 'http://www.w3.org/2000/svg';
+  const add = (attrs) => { const e = document.createElementNS(ns, 'ellipse'); for (const k in attrs) e.setAttribute(k, attrs[k]); g.append(e); };
+  for (let k = 0; k < 24; k++) {
+    const a = (k / 24) * Math.PI * 2;
+    add({ cx: cx + Math.cos(a) * R, cy: cy + Math.sin(a) * R * tilt, rx: r * Math.abs(Math.cos(a)) + r * 0.25, ry: r });
+  }
+  for (const s of [R - r, R, R + r]) add({ cx, cy, rx: s, ry: s * tilt });
 }
+
+// Canvas text needs the brand fonts loaded before the first frame is drawn
+const fontsReady = Promise.race([
+  Promise.all(['400 40px Syncopate', '700 40px Syncopate', '400 20px "Roboto Mono"'].map((f) => document.fonts.load(f))),
+  new Promise((r) => setTimeout(r, 2500)),
+]).catch(() => {});
 if (C.ctaLabel && C.ctaUrl) {
   const cta = $('#cta');
   cta.textContent = `${C.ctaLabel} →`; cta.href = C.ctaUrl; cta.hidden = false;
@@ -59,9 +74,13 @@ if (isDesktop && window.qrcode) {
 function drawQR(cv, url) {
   const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
   const n = qr.getModuleCount(), q = cv.getContext('2d'), m = 2, cell = cv.width / (n + m * 2);
-  q.fillStyle = '#fff'; q.fillRect(0, 0, cv.width, cv.height);
-  q.fillStyle = C.colors.primary;
-  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) q.fillRect((c + m) * cell, (r + m) * cell, cell + 0.5, cell + 0.5);
+  const finder = (r, c) => (r < 7 && (c < 7 || c >= n - 7)) || (r >= n - 7 && c < 7);
+  q.fillStyle = C.colors.paper; q.fillRect(0, 0, cv.width, cv.height);
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    if (!qr.isDark(r, c)) continue;
+    q.fillStyle = finder(r, c) ? C.colors.brand : C.colors.ink; // brown finder squares, like the brochure QRs
+    q.fillRect((c + m) * cell, (r + m) * cell, cell + 0.5, cell + 0.5);
+  }
 }
 
 // Start downloading the face model right away so it's ready by the time they tap.
@@ -87,7 +106,7 @@ async function start() {
   $('#loading').classList.remove('done');
   buildFilterBar();
   try {
-    await startCamera();
+    await Promise.all([startCamera(), fontsReady]);
   } catch (e) {
     cameraError(e);
     show('intro');
@@ -141,6 +160,7 @@ function stopCamera() {
 function initTracker() {
   return (async () => {
     const { FaceLandmarker, FilesetResolver } = await import('../vendor/mediapipe/vision_bundle.mjs');
+    setMesh(FaceLandmarker.FACE_LANDMARKS_TESSELATION);
     const wasm = await FilesetResolver.forVisionTasks(new URL('../vendor/mediapipe/wasm', import.meta.url).href);
     const options = (delegate) => ({
       baseOptions: { modelAssetPath: new URL('../vendor/models/face_landmarker.task', import.meta.url).href, delegate },
@@ -188,11 +208,14 @@ function loop(now) {
 
 function render(t, dt) {
   const vw = video.videoWidth, vh = video.videoHeight;
-  const s = Math.max(W / vw, H / vh);
-  const dx = (W - vw * s) / 2, dy = (H - vh * s) / 2;
+  const Hp = Math.round(H * BAND); // the photo area above the paper caption strip
+  const s = Math.max(W / vw, Hp / vh);
+  const dx = (W - vw * s) / 2, dy = (Hp - vh * s) / 2;
   const mirror = state.facing === 'user';
 
-  // camera feed, cover-fit, mirrored for selfies
+  // camera feed, cover-fit into the photo area, mirrored for selfies
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, W, Hp); ctx.clip();
   ctx.setTransform(mirror ? -1 : 1, 0, 0, 1, mirror ? W : 0, 0);
   ctx.drawImage(video, dx, dy, vw * s, vh * s);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -206,7 +229,8 @@ function render(t, dt) {
   state.faces = smoothFaces(state.faces, faces);
 
   const filter = FILTERS[state.filter];
-  filter.ambient?.(fx, dt, W, H, t);
+  filter.grade?.(ctx, W, Hp);
+  filter.ambient?.(fx, dt, W, Hp, t);
   for (const f of state.faces) {
     ctx.save();
     filter.draw(ctx, f, t);
@@ -226,7 +250,8 @@ function render(t, dt) {
   }
   fx.update(dt);
   fx.draw(ctx);
-  drawBrandFrame(ctx, W, H, C, t, state.logo);
+  ctx.restore(); // end of photo-area clip
+  drawBrandFrame(ctx, W, H, C, t, state.logo, state.logoPaper);
 
   updateHint(state.faces.length > 0, opened);
 }
@@ -251,7 +276,7 @@ function buildFilterBar() {
   FILTERS.forEach((f, i) => {
     const b = document.createElement('button');
     b.setAttribute('role', 'tab');
-    b.textContent = `${f.emoji} ${f.name}`;
+    b.textContent = f.name;
     b.addEventListener('click', () => setFilter(i));
     bar.append(b);
   });
