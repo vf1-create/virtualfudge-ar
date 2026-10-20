@@ -97,6 +97,11 @@ function drawQR(cv, url) {
   }
 }
 
+// Cache the face-tracking engine for instant repeat visits (https or localhost only)
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+
 // Start downloading the face model right away so it's ready by the time they tap.
 const trackerReady = initTracker();
 
@@ -548,8 +553,11 @@ function showResult(blob, kind, seconds) {
   box.innerHTML = '';
   const url = URL.createObjectURL(blob);
   const el = document.createElement(kind === 'photo' ? 'img' : 'video');
+  if (kind === 'video') { // attributes before src so iOS plays it inline and silently
+    for (const a of ['autoplay', 'loop', 'muted', 'playsinline']) el.setAttribute(a, '');
+    el.muted = true;
+  }
   el.src = url;
-  if (kind === 'video') Object.assign(el, { autoplay: true, loop: true, muted: true, playsInline: true });
   el.alt = 'Your AR selfie';
   box.append(el);
   const what = kind === 'photo' ? 'Photo' : `Video · ${Math.max(1, Math.round(seconds || 0))}s`;

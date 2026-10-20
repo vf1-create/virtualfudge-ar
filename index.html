@@ -54,7 +54,7 @@
 
   <!-- 2. Live AR camera -->
   <section id="ar" class="screen" aria-label="AR camera">
-    <canvas id="stage"></canvas>
+    <canvas id="stage" role="img" aria-label="Live camera preview with AR effects"></canvas>
     <video id="cam" playsinline muted autoplay></video>
     <div class="topbar">
       <button id="closeBtn" class="icon-btn" aria-label="Close">✕</button>
@@ -98,6 +98,7 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">Turn on JavaScript to use the Virtual Fudge AR camera.</p></noscript>
 
   <script src="vendor/qrcode.js"></script>
   <script type="module" src="js/app.js"></script>
