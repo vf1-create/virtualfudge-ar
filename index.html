@@ -25,15 +25,16 @@
   <!-- 1. Intro: a page from the brochure -->
   <section id="intro" class="screen paper active">
     <span class="corners" aria-hidden="true"></span>
-    <svg class="mesh" viewBox="0 0 400 220" aria-hidden="true"><g id="meshRings"></g></svg>
+    <div class="mesh-wrap" aria-hidden="true"><svg class="mesh" viewBox="0 0 400 220"><g id="meshRings"></g></svg></div>
     <div class="intro-card">
       <img class="logo" src="assets/logo-paper.png" alt="Virtual Fudge" width="1200" height="575">
       <div class="headline">
-        <p class="kicker"><span data-text="kicker"></span> · <span id="countdown"></span></p>
+        <p class="kicker"><span data-text="kicker"></span>&nbsp;· <span id="countdown"></span></p>
         <h1 data-text="seasonTitle"></h1>
       </div>
       <p class="lede" data-text="intro"></p>
       <button id="startBtn" class="btn primary">Open the camera <span aria-hidden="true">→</span></button>
+      <p id="camError" class="cam-error" role="alert" hidden></p>
       <p class="fine">Runs on your device. Nothing is uploaded unless you share it.</p>
       <div id="desktopQR" class="qr-panel" hidden>
         <canvas id="qr" width="264" height="264" aria-label="QR code to open this page on your phone"></canvas>
@@ -41,6 +42,14 @@
       </div>
       <p class="tag"><span data-text="hashtag"></span> · <span data-text="website"></span></p>
     </div>
+    <figure class="print-preview" aria-hidden="true">
+      <div class="pp-photo"><img src="assets/mark.png" alt=""><span class="pp-corners"></span></div>
+      <figcaption class="pp-strip">
+        <b data-text="kicker"></b>
+        <span class="pp-title" data-text="seasonTitle"></span>
+        <span class="pp-tag" data-text="hashtag"></span>
+      </figcaption>
+    </figure>
   </section>
 
   <!-- 2. Live AR camera -->
@@ -49,16 +58,24 @@
     <video id="cam" playsinline muted autoplay></video>
     <div class="topbar">
       <button id="closeBtn" class="icon-btn" aria-label="Close">✕</button>
-      <button id="flipBtn" class="icon-btn" aria-label="Switch camera">⇆</button>
+      <div class="top-right">
+        <button id="timerBtn" class="icon-btn timer" aria-label="Self-timer off" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M9.5 2.75h5M18.5 6.5l1.25-1.25"/></svg>
+          <span class="badge" hidden></span>
+        </button>
+        <button id="flipBtn" class="icon-btn" aria-label="Switch camera">⇆</button>
+      </div>
     </div>
     <div id="hint" class="hint" hidden></div>
+    <div id="modeLabel" class="mode-label" aria-live="polite"></div>
+    <div id="countNum" class="count" aria-live="assertive"></div>
     <div id="loading" class="loading paper">
       <img class="logo" src="assets/logo-paper.png" alt="" width="1200" height="575">
       <div class="bar"><span></span></div>
       <p>Warming up the camera…</p>
     </div>
+    <div id="filters" class="filters" role="tablist" aria-label="Filters"></div>
     <div class="bottombar">
-      <div id="filters" class="filters" role="tablist"></div>
       <button id="shutter" class="shutter" aria-label="Tap for photo, hold for video"><span></span></button>
       <p class="shutter-tip">Tap for photo · Hold for video</p>
     </div>
@@ -69,11 +86,14 @@
   <section id="result" class="screen paper">
     <span class="corners" aria-hidden="true"></span>
     <div id="resultMedia" class="result-media"></div>
+    <p id="resultMeta" class="result-meta"></p>
     <div class="result-actions">
       <button id="retakeBtn" class="btn ghost">Retake</button>
+      <button id="copyBtn" class="btn ghost" hidden>Copy caption</button>
       <button id="saveBtn" class="btn ghost">Save</button>
       <button id="shareBtn" class="btn primary">Share <span aria-hidden="true">↗</span></button>
     </div>
+    <p id="tagLine" class="tag-line"></p>
     <a id="cta" class="cta" target="_blank" rel="noopener" hidden></a>
   </section>
 

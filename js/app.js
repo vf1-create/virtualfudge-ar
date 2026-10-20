@@ -2,7 +2,7 @@ import C from './config.js';
 import { setTheme, setMesh, getFilters, facePose, smoothFaces, localToScreen, Particles } from './effects.js';
 import { drawBrandFrame, countdownLabel, BAND } from './frame.js';
 
-const W = C.output.width, H = C.output.height;
+let W = C.output.width, H = C.output.height; // may drop to 720p on slow devices, see adaptQuality()
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
 
@@ -13,7 +13,7 @@ canvas.width = W; canvas.height = H;
 
 setTheme(C);
 const FILTERS = getFilters(C.filters);
-const fx = new Particles(W / 1080);
+let fx = new Particles(W / 1080);
 const src = new URLSearchParams(location.search).get('src') || 'direct';
 const track = (event, data = {}) => { try { C.track?.(event, { src, filter: FILTERS[state.filter]?.id, ...data }); } catch {} };
 
@@ -43,13 +43,26 @@ drawMesh($('#meshRings'));
 
 // faint wireframe torus behind the intro, echoing the brochure pages
 function drawMesh(g) {
-  const cx = 230, cy = 120, R = 120, r = 36, tilt = 0.42, ns = 'http://www.w3.org/2000/svg';
-  const add = (attrs) => { const e = document.createElementNS(ns, 'ellipse'); for (const k in attrs) e.setAttribute(k, attrs[k]); g.append(e); };
-  for (let k = 0; k < 24; k++) {
-    const a = (k / 24) * Math.PI * 2;
-    add({ cx: cx + Math.cos(a) * R, cy: cy + Math.sin(a) * R * tilt, rx: r * Math.abs(Math.cos(a)) + r * 0.25, ry: r });
-  }
-  for (const s of [R - r, R, R + r]) add({ cx, cy, rx: s, ry: s * tilt });
+  const cx = 230, cy = 120, R = 120, r = 36, tilt = 0.42, N = 24, ns = 'http://www.w3.org/2000/svg';
+  const make = () => { const e = document.createElementNS(ns, 'ellipse'); g.append(e); return e; };
+  const rings = Array.from({ length: N }, make);
+  for (const s of [R - r, R, R + r]) { const e = make(); e.setAttribute('cx', cx); e.setAttribute('cy', cy); e.setAttribute('rx', s); e.setAttribute('ry', s * tilt); }
+  const place = (phase) => rings.forEach((e, k) => {
+    const a = (k / N) * Math.PI * 2 + phase;
+    e.setAttribute('cx', (cx + Math.cos(a) * R).toFixed(2));
+    e.setAttribute('cy', (cy + Math.sin(a) * R * tilt).toFixed(2));
+    e.setAttribute('rx', (r * Math.abs(Math.cos(a)) + r * 0.25).toFixed(2));
+    e.setAttribute('ry', r);
+  });
+  place(0);
+  // the torus turns slowly while the intro is on screen
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const intro = $('#intro');
+  const tick = (now) => {
+    if (intro.classList.contains('active') && !document.hidden) place(now / 9000);
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }
 
 // Canvas text needs the brand fonts loaded before the first frame is drawn
@@ -57,6 +70,7 @@ const fontsReady = Promise.race([
   Promise.all(['400 40px Syncopate', '700 40px Syncopate', '400 20px "Roboto Mono"'].map((f) => document.fonts.load(f))),
   new Promise((r) => setTimeout(r, 2500)),
 ]).catch(() => {});
+$('#tagLine').textContent = C.handle ? `Tag ${C.handle} when you post` : `Post it with ${C.hashtag}`;
 if (C.ctaLabel && C.ctaUrl) {
   const cta = $('#cta');
   cta.textContent = `${C.ctaLabel} →`; cta.href = C.ctaUrl; cta.hidden = false;
@@ -102,6 +116,7 @@ function show(id) {
 
 async function start() {
   track('start');
+  showCamError('');
   show('ar');
   $('#loading').classList.remove('done');
   buildFilterBar();
@@ -113,9 +128,35 @@ async function start() {
     return;
   }
   $('#loading').classList.add('done');
+  layoutControls();
   resume();
-  trackerReady.then((lm) => { state.landmarker = lm; });
+  trackerReady.then((lm) => { state.landmarker = lm; state.trackerFailed = !lm; state.trackStart = performance.now(); });
 }
+
+// Keep the controls off the caption text on every screen shape.
+function layoutControls() {
+  const ar = $('#ar'), r = canvas.getBoundingClientRect();
+  if (!r.width) return;
+  const side = (innerWidth - r.width) / 2 >= 220;
+  ar.classList.toggle('side', side);
+  ar.style.setProperty('--label-top', `${Math.round(r.top + r.height * 0.15)}px`);
+  if (side) {
+    ar.style.setProperty('--rail-left', `${Math.round(r.right + Math.min(56, (innerWidth - r.right - 180) / 2))}px`);
+    ar.classList.remove('tight');
+    ar.style.setProperty('--rail-top', `${Math.round($('#filters').getBoundingClientRect().top)}px`); // hints sit just above the list
+    return;
+  }
+  const bandTop = r.top + r.height * BAND;
+  const textBottom = r.top + r.height * (BAND + 248 / 1920);
+  const chips = $('#filters').offsetHeight || 34;
+  ar.style.setProperty('--chips-top', `${Math.round(bandTop - chips - 10)}px`);
+  ar.style.setProperty('--hint-top', `${Math.round(bandTop - chips - 10 - 46)}px`);
+  // room under the caption text for the shutter (+ its tip)?
+  const room = innerHeight - textBottom;
+  ar.classList.toggle('tight', room < 70 + 26 + 18);
+}
+addEventListener('resize', layoutControls);
+addEventListener('orientationchange', () => setTimeout(layoutControls, 250));
 
 function resume() {
   if (state.running) return;
@@ -126,15 +167,27 @@ function resume() {
 
 function cameraError(e) {
   console.error(e);
-  const inApp = /Instagram|FBAN|FBAV|TikTok|musical_ly|BytedanceWebview|Snapchat|Twitter|LinkedInApp/i.test(navigator.userAgent);
-  const msg = inApp
-    ? 'This app’s browser blocks the camera. Tap ••• and choose “Open in browser”.'
-    : !navigator.mediaDevices?.getUserMedia
-    ? 'Camera needs a secure (https) link. Open this page over https.'
-    : e?.name === 'NotAllowedError'
-      ? 'Camera access was blocked. Allow it in your browser settings and try again.'
-      : 'Couldn’t start the camera. Close other apps using it and try again.';
-  toast(msg, 5000);
+  const ua = navigator.userAgent;
+  const inApp = /Instagram|FBAN|FBAV|TikTok|musical_ly|BytedanceWebview|Snapchat|Twitter|LinkedInApp/i.test(ua);
+  const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua);
+  let msg;
+  if (inApp) msg = 'This app’s browser blocks the camera. Tap ••• and choose “Open in browser”.';
+  else if (!navigator.mediaDevices?.getUserMedia) msg = 'The camera needs a secure (https) link. Open this page from its https address.';
+  else if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') {
+    msg = ios ? 'Camera access is off. Tap “aA” in the address bar › Website Settings › Camera › Allow, then try again.'
+      : android ? 'Camera access is off. Tap the icon left of the address › Permissions › Camera › Allow, then try again.'
+      : 'Camera access is off. Click the camera icon in the address bar, allow it, then try again.';
+  } else if (e?.name === 'NotFoundError' || e?.name === 'OverconstrainedError') {
+    msg = 'No camera found on this device. Scan the QR code with your phone instead.';
+  } else msg = 'The camera is busy or unavailable. Close other apps using it, then try again.';
+  showCamError(msg);
+}
+
+function showCamError(msg) {
+  const el = $('#camError');
+  el.textContent = msg;
+  el.hidden = !msg;
 }
 
 // ── Camera + tracking ────────────────────────────────────────
@@ -146,12 +199,33 @@ async function startCamera() {
     video: { facingMode: state.facing, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
   });
   state.stream = stream;
+  stream.getVideoTracks()[0]?.addEventListener('ended', () => {
+    if (state.stream !== stream) return;
+    stopCamera(); show('intro');
+    showCamError('The camera was disconnected. Tap “Open the camera” to start again.');
+  });
+  keepAwake(true);
+  // only offer "switch camera" when there's a second camera to switch to
+  navigator.mediaDevices.enumerateDevices?.().then((list) => {
+    $('#flipBtn').hidden = list.filter((d) => d.kind === 'videoinput').length < 2;
+  }).catch(() => {});
   video.srcObject = stream;
   await video.play();
   if (!video.videoWidth) await new Promise((r) => video.addEventListener('loadedmetadata', r, { once: true }));
 }
 
+// keep the screen on while the camera is open (kiosks, tablets on stands)
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && !wakeLock) { wakeLock = await navigator.wakeLock?.request('screen'); wakeLock?.addEventListener('release', () => { wakeLock = null; }); }
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch {}
+}
+
 function stopCamera() {
+  keepAwake(false);
+  cancelCountdown();
   state.running = false;
   state.stream?.getTracks().forEach((t) => t.stop());
   state.stream = null;
@@ -186,7 +260,7 @@ function initTracker() {
 function loop(now) {
   if (!state.running) return;
   requestAnimationFrame(loop);
-  const dt = Math.min(0.05, (now - state.lastFrame) / 1000);
+  const raw = (now - state.lastFrame) / 1000, dt = Math.min(0.05, raw);
   state.lastFrame = now;
   if (video.readyState < 2 || !video.videoWidth) return;
 
@@ -198,11 +272,30 @@ function loop(now) {
   }
 
   render(now / 1000, dt);
+  adaptQuality(raw);
 
   if (state.recorder) {
     const p = (now - state.recStart) / (C.maxVideoSeconds * 1000);
     $('#shutter').style.setProperty('--p', Math.min(1, p));
     if (p >= 1) stopRecording();
+  }
+}
+
+// Older phones: if frames take too long at 1080p, drop to 720p (still sharp for Stories)
+function adaptQuality(dt) {
+  if (W <= 720 || state.recorder || !state.landmarker) return;
+  const q = (state.q ||= { n: 0, sum: 0 });
+  if (++q.n < 30) return; // skip warm-up frames
+  q.sum += dt;
+  if (q.n < 120) return;
+  const avg = q.sum / (q.n - 30);
+  q.n = 0; q.sum = 0;
+  if (avg > 0.045) { // slower than ~22 fps
+    W = 720; H = Math.round((720 * C.output.height) / C.output.width);
+    canvas.width = W; canvas.height = H;
+    fx = new Particles(W / 1080);
+    state.faces = [];
+    console.info('[ar] switched to 720p for smoother frames');
   }
 }
 
@@ -244,7 +337,7 @@ function render(t, dt) {
     if (f.jaw < 0.4) continue;
     opened = true;
     const m = localToScreen(f, f.mouthX, f.mouthY + 0.03);
-    const n = Math.floor((state.mouthAcc += dt * 70 * f.jaw));
+    const n = Math.floor((state.mouthAcc += dt * 45 * f.jaw));
     state.mouthAcc -= n;
     fx.emit(filter.burst, m.x, m.y, n, f.angle + Math.PI / 2, 1.6);
   }
@@ -258,6 +351,18 @@ function render(t, dt) {
 
 function updateHint(hasFace, opened) {
   const hint = $('#hint');
+  if (!state.landmarker && !state.trackerFailed && state.facing === 'user') {
+    if (hint.dataset.kind !== 'loading') { hint.textContent = 'Starting face tracking…'; hint.hidden = false; hint.dataset.kind = 'loading'; }
+    return;
+  }
+  if (hint.dataset.kind === 'loading') { hint.hidden = true; hint.dataset.kind = ''; }
+  // once tracking is running, nudge people who aren't in frame
+  const now = performance.now();
+  if (hasFace) state.lastFace = now;
+  const lost = state.facing === 'user' && state.landmarker && now - (state.lastFace ?? state.trackStart ?? now) > 2500;
+  if (lost && hint.hidden) { hint.textContent = 'Bring your face into the frame'; hint.hidden = false; hint.dataset.kind = 'lost'; }
+  if (!lost && hint.dataset.kind === 'lost') { hint.hidden = true; hint.dataset.kind = ''; }
+  if (lost) return;
   if (state.hintDone) return;
   if (opened) { state.hintDone = true; hint.hidden = true; return; }
   if (hasFace && !state.hintShown) {
@@ -289,8 +394,10 @@ function setFilter(i, silent) {
   $('#filters').children[state.filter]?.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
   if (!silent) {
     track('filter');
-    const c = toCanvas(innerWidth / 2, innerHeight * 0.45);
-    fx.emit(FILTERS[state.filter].burst, c.x, c.y, 40);
+    const label = $('#modeLabel');
+    label.textContent = FILTERS[state.filter].name;
+    label.classList.remove('show'); void label.offsetWidth; label.classList.add('show');
+    navigator.vibrate?.(8);
   }
 }
 
@@ -310,6 +417,51 @@ canvas.addEventListener('pointerup', (e) => {
   down = null;
 });
 
+// self-timer: off → 3s → 10s
+const TIMERS = [0, 3, 10];
+$('#timerBtn').addEventListener('click', () => {
+  state.timer = TIMERS[(TIMERS.indexOf(state.timer || 0) + 1) % TIMERS.length];
+  const b = $('#timerBtn'), badge = b.querySelector('.badge');
+  badge.textContent = state.timer || ''; badge.hidden = !state.timer;
+  b.setAttribute('aria-pressed', !!state.timer);
+  b.setAttribute('aria-label', state.timer ? `Self-timer ${state.timer} seconds` : 'Self-timer off');
+  toast(state.timer ? `Self-timer: ${state.timer} seconds` : 'Self-timer off', 1400);
+});
+
+let countTimer = null;
+function capturePhoto() {
+  if (countTimer) { cancelCountdown(); return; } // tap again to cancel
+  if (!state.timer) { takePhoto(); return; }
+  let n = state.timer;
+  const el = $('#countNum');
+  const tick = () => {
+    if (n === 0) { cancelCountdown(); takePhoto(); return; }
+    el.textContent = n; el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
+    navigator.vibrate?.(6);
+    n--; countTimer = setTimeout(tick, 1000);
+  };
+  shutter.classList.add('counting');
+  tick();
+}
+function cancelCountdown() {
+  clearTimeout(countTimer); countTimer = null;
+  $('#countNum').classList.remove('tick'); $('#countNum').textContent = '';
+  shutter?.classList.remove('counting');
+}
+
+// keyboard: space/enter = photo, arrows = filters, escape = back
+document.addEventListener('keydown', (e) => {
+  if ($('#ar').classList.contains('active')) {
+    if (e.target.closest?.('button') && (e.key === ' ' || e.key === 'Enter')) return; // let focused buttons work normally
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (!e.repeat) capturePhoto(); }
+    else if (e.key === 'ArrowRight') setFilter(state.filter + 1);
+    else if (e.key === 'ArrowLeft') setFilter(state.filter - 1);
+    else if (e.key === 'Escape') $('#closeBtn').click();
+  } else if ($('#result').classList.contains('active') && e.key === 'Escape') {
+    $('#retakeBtn').click();
+  }
+});
+
 // ── Capture ──────────────────────────────────────────────────
 
 const shutter = $('#shutter');
@@ -319,6 +471,7 @@ shutter.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   pressed = true;
   shutter.setPointerCapture?.(e.pointerId);
+  if (countTimer) return; // a tap during the countdown cancels it (handled on release)
   holdTimer = setTimeout(() => { if (pressed) startRecording(); }, 350);
 });
 const release = (photo) => () => {
@@ -326,13 +479,14 @@ const release = (photo) => () => {
   pressed = false;
   clearTimeout(holdTimer);
   if (state.recorder) stopRecording();
-  else if (photo) takePhoto();
+  else if (photo) capturePhoto();
 };
 shutter.addEventListener('pointerup', release(true));
 shutter.addEventListener('pointercancel', release(false));
 shutter.addEventListener('contextmenu', (e) => e.preventDefault());
 
 function takePhoto() {
+  navigator.vibrate?.(12);
   const f = $('#flash');
   f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
   canvas.toBlob((blob) => { track('photo'); showResult(blob, 'photo'); }, 'image/jpeg', 0.92);
@@ -362,8 +516,9 @@ function startRecording() {
       toast('That clip didn’t record. Hold to try again!');
       return;
     }
-    track('video', { seconds: Math.round((performance.now() - state.recStart) / 1000) });
-    showResult(blob, 'video');
+    const seconds = (performance.now() - state.recStart) / 1000;
+    track('video', { seconds: Math.round(seconds) });
+    showResult(blob, 'video', seconds);
   };
   rec.start(250);
   state.recorder = rec;
@@ -385,7 +540,7 @@ function stopRecording() {
 
 // ── Result: save + share ─────────────────────────────────────
 
-function showResult(blob, kind) {
+function showResult(blob, kind, seconds) {
   state.running = false; // pause rendering, keep camera warm for retake
   state.blob = blob; state.kind = kind;
   const box = $('#resultMedia');
@@ -397,6 +552,8 @@ function showResult(blob, kind) {
   if (kind === 'video') Object.assign(el, { autoplay: true, loop: true, muted: true, playsInline: true });
   el.alt = 'Your AR selfie';
   box.append(el);
+  const what = kind === 'photo' ? 'Photo' : `Video · ${Math.max(1, Math.round(seconds || 0))}s`;
+  $('#resultMeta').textContent = `${what} · ${W} × ${H} · ready for Stories & Reels`;
   show('result');
 }
 
@@ -406,7 +563,22 @@ function fileFor(blob) {
   return new File([blob], `${slug}-${Date.now()}.${ext}`, { type: blob.type });
 }
 
-$('#retakeBtn').addEventListener('click', () => { show('ar'); resume(); });
+// Computers usually can't share files to apps: offer Download + Copy caption instead
+const canShareFiles = (() => { try { return !!navigator.canShare?.({ files: [new File(['x'], 'x.jpg', { type: 'image/jpeg' })] }); } catch { return false; } })();
+const caption = () => `${C.shareText} ${C.hashtag} ${C.shareUrl || location.origin + location.pathname}`;
+if (!canShareFiles) {
+  $('#shareBtn').hidden = true;
+  $('#saveBtn').classList.replace('ghost', 'primary');
+  $('#saveBtn').innerHTML = 'Download <span aria-hidden="true">↓</span>';
+  $('#copyBtn').hidden = false;
+}
+$('#copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(caption()); toast('Caption copied. Paste it into your post.'); }
+  catch { toast(caption(), 6000); }
+  track('copy');
+});
+
+$('#retakeBtn').addEventListener('click', () => { show('ar'); layoutControls(); resume(); });
 
 $('#saveBtn').addEventListener('click', () => {
   const file = fileFor(state.blob);
@@ -414,7 +586,7 @@ $('#saveBtn').addEventListener('click', () => {
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   track('save', { kind: state.kind });
-  toast('Saved! Post it with ' + C.hashtag);
+  toast(C.handle ? `Saved. Tag ${C.handle} when you post.` : `Saved. Post it with ${C.hashtag}.`);
 });
 
 $('#shareBtn').addEventListener('click', async () => {
@@ -447,4 +619,5 @@ function toast(msg, ms = 2600) {
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && state.recorder) stopRecording();
+  if (!document.hidden && $('#ar').classList.contains('active') && state.stream) keepAwake(true);
 });

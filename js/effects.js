@@ -137,6 +137,12 @@ const snow = {
     ctx.fillStyle = g; ctx.fillRect(-1, -2, 2, 3);
     ctx.restore();
 
+    // the hat's shadow on the forehead
+    const sh = ctx.createLinearGradient(0, cuffBottom - 0.01, 0, cuffBottom + 0.09);
+    sh.addColorStop(0, 'rgba(25,10,3,.32)'); sh.addColorStop(1, 'rgba(25,10,3,0)');
+    ctx.fillStyle = sh;
+    ctx.beginPath(); ctx.ellipse(0, cuffBottom - 0.01, 0.5, 0.1, 0, 0, Math.PI); ctx.fill();
+
     // cuff
     roundRect(ctx, -0.6, cuffTop, 1.2, cuffBottom - cuffTop, 0.07);
     ctx.fillStyle = C.colors.highlight; ctx.fill();
@@ -337,6 +343,13 @@ const vfshades = {
 
     viewfinder(ctx, f);
 
+    // soft contact shadow where the frames sit on the face
+    ctx.save();
+    ctx.shadowColor = 'rgba(20,8,2,.38)'; ctx.shadowBlur = f.w * 0.035; ctx.shadowOffsetY = f.w * 0.018;
+    ctx.fillStyle = 'rgba(20,6,0,.5)';
+    ctx.beginPath(); lensPath(ctx, -e, -1); lensPath(ctx, e, 1); ctx.fill();
+    ctx.restore();
+
     // striped lenses + bridge
     ctx.save();
     ctx.beginPath();
@@ -348,6 +361,12 @@ const vfshades = {
     ctx.fillRect(-1, -0.3, 2, 0.6);
     ctx.fillStyle = g;
     for (let x = -e - 0.24; x < e + 0.24; x += step) ctx.fillRect(x, -0.3, bar, 0.6);
+    // light sweep, every few seconds
+    const span = e + 0.3, sx = ((t * 0.32) % 1.8 - 0.4) * span * 2 - span;
+    const sg = ctx.createLinearGradient(sx - 0.12, 0, sx + 0.12, 0);
+    sg.addColorStop(0, 'rgba(255,255,255,0)'); sg.addColorStop(0.5, 'rgba(255,240,220,.38)'); sg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sg;
+    ctx.beginPath(); ctx.moveTo(sx - 0.08, -0.3); ctx.lineTo(sx + 0.16, -0.3); ctx.lineTo(sx + 0.04, 0.3); ctx.lineTo(sx - 0.2, 0.3); ctx.closePath(); ctx.fill();
     ctx.restore();
 
     // drips off the right lens; they stretch when the mouth opens
@@ -401,13 +420,13 @@ export class Particles {
     const u = this.u;
     for (let i = 0; i < n && this.list.length < 700; i++) {
       const a = dir == null ? Math.random() * TAU : dir + (Math.random() - 0.5) * spread;
-      const sp = (type === 'snow' ? rand(150, 500) : rand(400, 1100)) * u;
-      const life = type === 'snow' ? rand(0.6, 1.2) : rand(1.2, 2.2);
+      const m = MOTION[type] || MOTION.default;
+      const sp = rand(...m.speed) * u, life = rand(...m.life);
       this.list.push({
         type, x, y, life, max: life,
         vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-        rot: Math.random() * TAU, vr: rand(-8, 8),
-        size: (type === 'snow' ? rand(6, 16) : type === 'stars' ? rand(14, 30) : rand(10, 20)) * u,
+        rot: m.spin ? Math.random() * TAU : 0, vr: m.spin ? rand(-m.spin, m.spin) : 0,
+        size: rand(...m.size) * u,
         color: pick(palette(type)),
       });
     }
@@ -431,7 +450,7 @@ export class Particles {
     for (const p of this.list) {
       p.life -= dt;
       p.vx *= drag; p.vy *= drag;
-      p.vy += (p.type === 'snow' ? 120 : 900) * this.u * dt;
+      p.vy += (MOTION[p.type] || MOTION.default).gravity * this.u * dt;
       p.x += p.vx * dt; p.y += p.vy * dt;
       p.rot += p.vr * dt;
     }
@@ -441,10 +460,17 @@ export class Particles {
   draw(ctx) {
     if (this.snowing) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = 'rgba(255,255,255,.85)';
-      ctx.beginPath();
-      for (const f of this.flakes) { ctx.moveTo(f.x + f.r, f.y); ctx.arc(f.x, f.y, f.r, 0, TAU); }
-      ctx.fill();
+      // three depths: small faint flakes far away, larger brighter ones close
+      for (const [lo, hi, alpha] of [[0, 3.2, 0.45], [3.2, 5.2, 0.7], [5.2, 99, 0.92]]) {
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.beginPath();
+        for (const f of this.flakes) {
+          const r = f.r / this.u;
+          if (r < lo || r >= hi) continue;
+          ctx.moveTo(f.x + f.r, f.y); ctx.arc(f.x, f.y, f.r, 0, TAU);
+        }
+        ctx.fill();
+      }
       this.snowing = false;
     } else {
       this.flakes.length = 0;
@@ -456,6 +482,13 @@ export class Particles {
       ctx.fillStyle = p.color;
       if (p.type === 'snow') {
         ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, TAU); ctx.fill();
+      } else if (p.type === 'fudge') { // chocolate chip with a soft highlight
+        roundRect(ctx, -p.size / 2, -p.size / 2, p.size, p.size * 0.8, p.size * 0.22); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.22)';
+        roundRect(ctx, -p.size * 0.35, -p.size * 0.38, p.size * 0.4, p.size * 0.18, p.size * 0.08); ctx.fill();
+      } else if (p.type === 'pixels') { // crisp squares that drift up and flicker out
+        ctx.globalAlpha *= 0.75 + 0.25 * Math.sin(p.life * 40);
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
       } else if (p.type === 'stars') {
         starPath(ctx, 0, 0, p.size / 2, 0.45); ctx.fill();
       } else {
@@ -468,11 +501,19 @@ export class Particles {
   }
 }
 
+const MOTION = {
+  snow: { speed: [150, 500], life: [0.6, 1.2], size: [6, 16], gravity: 120, spin: 8 },
+  fudge: { speed: [300, 820], life: [1.4, 2.4], size: [10, 20], gravity: 1000, spin: 6 },
+  pixels: { speed: [120, 380], life: [0.9, 1.8], size: [6, 13], gravity: -160, spin: 0 },
+  default: { speed: [400, 1100], life: [1.2, 2.2], size: [10, 20], gravity: 900, spin: 8 },
+};
+MOTION.stars = { ...MOTION.default, size: [14, 30] };
+
 function palette(type) {
   switch (type) {
     case 'snow': return ['#ffffff', '#eaf8ff', '#d4f3ff'];
     case 'pixels': return [C.colors.highlight, C.colors.accent, '#ffffff'];
-    case 'fudge': return ['#240d02', '#5a2a10', '#8d4f29', '#ae6b39', '#f3d3ac', '#ffffff'];
+    case 'fudge': return ['#240d02', '#3a1a0b', '#5a2a10', '#8d4f29', '#ae6b39'];
     case 'gold': return ['#FFD54A', '#FFC93C', '#FFF1B0', '#E0A800', '#ffffff'];
     case 'stars': return [C.colors.highlight, C.colors.accent, '#ffffff'];
     default: return [C.colors.accent, C.colors.highlight, '#ffffff', '#ff3b6b'];

@@ -57,9 +57,8 @@ function fits(ctx, str, max) { return ctx.measureText(str).width <= max; }
 
 export function drawBrandFrame(ctx, W, H, C, t, logo, logoPaper) {
   const u = W / 1080;
-  const { paper, ink, brand, text } = C.colors;
+  const { text } = C.colors;
   const y0 = Math.round(H * BAND);
-  const pad = 72 * u;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
@@ -79,13 +78,30 @@ export function drawBrandFrame(ctx, W, H, C, t, logo, logoPaper) {
   ctx.lineCap = 'butt';
   brackets(ctx, 40 * u, 40 * u, W - 40 * u, y0 - 40 * u, 64 * u);
 
-  // paper caption strip
-  ctx.fillStyle = paper; ctx.fillRect(0, y0, W, H - y0);
-  ctx.fillStyle = grainPattern(ctx); ctx.fillRect(0, y0, W, H - y0);
+  // paper caption strip: static, so it's drawn once into an offscreen canvas and reused every frame
+  const key = [W, H, countdownLabel(C), !!(logoPaper && logoPaper.complete && logoPaper.naturalWidth), document.fonts?.status].join('|');
+  if (!stripCache || stripCache.key !== key) stripCache = { key, canvas: drawStrip(W, H, C, logoPaper) };
+  ctx.drawImage(stripCache.canvas, 0, y0);
+  ctx.restore();
+}
+
+let stripCache = null;
+function drawStrip(W, H, C, logoPaper) {
+  const u = W / 1080;
+  const { paper, ink, brand } = C.colors;
+  const y0 = Math.round(H * BAND), h = H - y0;
+  const pad = 72 * u;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = h;
+  const ctx = cv.getContext('2d');
+  ctx.translate(0, -y0); // keep drawing in full-frame coordinates
+
+  ctx.fillStyle = paper; ctx.fillRect(0, y0, W, h);
+  ctx.fillStyle = grainPattern(ctx); ctx.fillRect(0, y0, W, h);
   ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(0, y0, W, 2 * u);
 
   ctx.save();
-  ctx.beginPath(); ctx.rect(0, y0, W, H - y0); ctx.clip();
+  ctx.beginPath(); ctx.rect(0, y0, W, h); ctx.clip();
   ctx.strokeStyle = 'rgba(35,31,32,.10)'; ctx.lineWidth = 1.5 * u;
   mesh(ctx, W * 0.93, y0 + 175 * u, 150 * u, 46 * u, 0.42);
   ctx.restore();
@@ -98,8 +114,7 @@ export function drawBrandFrame(ctx, W, H, C, t, logo, logoPaper) {
   ctx.textBaseline = 'alphabetic';
   const maxW = W - pad * 2;
 
-  const label = countdownLabel(C);
-  const kicker = [C.kicker, label].filter(Boolean).join(' · ');
+  const kicker = [C.kicker, countdownLabel(C)].filter(Boolean).join(' · ');
   ctx.fillStyle = brand;
   ctx.font = `700 ${26 * u}px ${DISPLAY}`;
   ctx.fillText(kicker, pad, y0 + 96 * u, maxW);
@@ -120,7 +135,6 @@ export function drawBrandFrame(ctx, W, H, C, t, logo, logoPaper) {
   }
   ctx.fillStyle = hexA(ink, 0.6);
   ctx.font = `400 ${22 * u}px ${MONO}`;
-  ctx.fillText('Made in AR', pad, H - 82 * u);
-
-  ctx.restore();
+  ctx.fillText(C.handle ? `Tag ${C.handle}` : 'Made in AR', pad, H - 82 * u);
+  return cv;
 }

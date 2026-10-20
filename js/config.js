@@ -15,8 +15,9 @@ export default {
   intro: 'Try on our holiday AR: fudge shades, a digital twin, a little snow. Snap it, share it.',
 
   hashtag: '#VirtualFudge',
+  handle: '@Virtual_Fudge',         // asked for on the result screen and in the caption strip
   website: 'virtualfudge.com',
-  shareText: 'Got the Virtual Fudge AR treatment. Bespoke AR studio, NYC.',
+  shareText: 'Got the Virtual Fudge AR treatment @Virtual_Fudge',
   shareUrl: '',                     // link added to shares; blank = this page's URL
 
   ctaLabel: 'Let’s build yours',    // link on the result screen; blank to hide
