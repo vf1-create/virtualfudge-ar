@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#F3F3F3">
   <title>Virtual Fudge AR</title>
   <!-- Social link previews: switch og:image to an absolute https URL once the site is live -->
@@ -43,7 +43,7 @@
       <p class="tag"><span data-text="hashtag"></span> · <span data-text="website"></span></p>
     </div>
     <figure class="print-preview" aria-hidden="true">
-      <div class="pp-photo"><img src="assets/mark.png" alt=""><span class="pp-corners"></span></div>
+      <div class="pp-photo"><img src="assets/mark.png" alt="" loading="lazy"><span class="pp-corners"></span></div>
       <figcaption class="pp-strip">
         <b data-text="kicker"></b>
         <span class="pp-title" data-text="seasonTitle"></span>
@@ -66,7 +66,7 @@
         <button id="flipBtn" class="icon-btn" aria-label="Switch camera">⇆</button>
       </div>
     </div>
-    <div id="hint" class="hint" hidden></div>
+    <div id="hint" class="hint" role="status" hidden></div>
     <div id="modeLabel" class="mode-label" aria-live="polite"></div>
     <div id="countNum" class="count" aria-live="assertive"></div>
     <div id="loading" class="loading paper">
@@ -74,7 +74,7 @@
       <div class="bar"><span></span></div>
       <p>Warming up the camera…</p>
     </div>
-    <div id="filters" class="filters" role="tablist" aria-label="Filters"></div>
+    <div id="filters" class="filters" role="radiogroup" aria-label="Filters"></div>
     <div class="bottombar">
       <button id="shutter" class="shutter" aria-label="Tap for photo, hold for video"><span></span></button>
       <p class="shutter-tip">Tap for photo · Hold for video</p>
@@ -85,14 +85,16 @@
   <!-- 3. Result -->
   <section id="result" class="screen paper">
     <span class="corners" aria-hidden="true"></span>
+    <h2 id="resultHeading" class="visually-hidden" tabindex="-1">Your photo is ready</h2>
     <div id="resultMedia" class="result-media"></div>
     <p id="resultMeta" class="result-meta"></p>
     <div class="result-actions">
-      <button id="retakeBtn" class="btn ghost">Retake</button>
-      <button id="copyBtn" class="btn ghost" hidden>Copy caption</button>
-      <button id="saveBtn" class="btn ghost">Save</button>
       <button id="shareBtn" class="btn primary">Share <span aria-hidden="true">↗</span></button>
+      <button id="retakeBtn" class="btn ghost">Retake</button>
+      <button id="saveBtn" class="btn ghost">Save</button>
+      <button id="copyBtn" class="btn ghost" hidden>Copy caption</button>
     </div>
+    <p id="saveHint" class="tag-line" hidden></p>
     <p id="tagLine" class="tag-line"></p>
     <a id="cta" class="cta" target="_blank" rel="noopener" hidden></a>
   </section>
@@ -100,7 +102,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <noscript><p class="noscript">Turn on JavaScript to use the Virtual Fudge AR camera.</p></noscript>
 
-  <script src="vendor/qrcode.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

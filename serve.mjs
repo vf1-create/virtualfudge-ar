@@ -23,10 +23,13 @@ const TYPES = {
 };
 
 function handler(req, res) {
-  let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  let p;
+  try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { res.writeHead(400).end('Bad request'); return; }
+  if (p.includes('\0')) { res.writeHead(400).end('Bad request'); return; }
   if (p.endsWith('/')) p += 'index.html';
   const file = path.join(ROOT, path.normalize(p));
-  if (!file.startsWith(ROOT) || /[\\/](\.|certs[\\/]|node_modules)/.test('/' + path.relative(ROOT, file))) {
+  // case-insensitive: macOS and Windows file systems would happily serve /CERTS/key.pem
+  if (!file.startsWith(ROOT) || /[\\/](\.|certs[\\/]|node_modules)/i.test('/' + path.relative(ROOT, file))) {
     res.writeHead(403).end('Forbidden');
     return;
   }

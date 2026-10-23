@@ -20,7 +20,9 @@ export function facePose(lm, blend, toScreen) {
   const P = (i) => toScreen(lm[i].x, lm[i].y);
   const a = P(LM.cheekL), b = P(LM.cheekR);
   let ex = b.x - a.x, ey = b.y - a.y;
-  if (ex < 0) { ex = -ex; ey = -ey; } // mirrored video: keep +x pointing screen-right
+  // orient the local frame by the face itself (local +y runs forehead → chin), so any roll works, mirrored or not
+  const top = P(LM.top), chin = P(LM.chin);
+  if (-ey * (chin.x - top.x) + ex * (chin.y - top.y) < 0) { ex = -ex; ey = -ey; }
   const w = Math.hypot(ex, ey) || 1;
   const cos = ex / w, sin = ey / w;
 
@@ -246,7 +248,13 @@ const gameface = {
 
 // ── Wireframe: the face as a live mesh, like the wireframes in the brochure ──
 let MESH = [];
-export function setMesh(connections) { MESH = connections || []; }
+export function setMesh(connections) { // the tessellation lists shared triangle edges twice: keep each edge once
+  const seen = new Set();
+  MESH = (connections || []).filter(({ start, end }) => {
+    const k = Math.min(start, end) * 1000 + Math.max(start, end);
+    return !seen.has(k) && seen.add(k);
+  });
+}
 
 const wireframe = {
   id: 'wireframe', name: 'Wireframe', emoji: '◇', burst: 'pixels', hint: 'Open your mouth to scatter pixels',
@@ -270,7 +278,9 @@ const wireframe = {
     const path = (seg) => { ctx.beginPath(); for (let j = 0; j < seg.length; j += 2) { ctx.moveTo(seg[j].x, seg[j].y); ctx.lineTo(seg[j + 1].x, seg[j + 1].y); } };
     // a soft chocolate underline keeps the white mesh readable on any skin tone
     ctx.lineWidth = lw * 2.2; ctx.strokeStyle = 'rgba(36,13,2,.18)';
-    path(buckets.flat()); ctx.stroke();
+    ctx.beginPath();
+    for (const seg of buckets) for (let j = 0; j < seg.length; j += 2) { ctx.moveTo(seg[j].x, seg[j].y); ctx.lineTo(seg[j + 1].x, seg[j + 1].y); }
+    ctx.stroke();
     ctx.lineWidth = lw;
     buckets.forEach((seg, i) => {
       if (!seg.length) return;
@@ -324,11 +334,19 @@ const VF_STOPS = [[0, '#240d02'], [0.35, '#ae6b39'], [0.5, '#a96a3b'], [0.65, '#
 
 function lensPath(ctx, cx, s) { // s = +1 right lens, -1 left lens (outer side points along s)
   const w = 0.215, top = -0.15, bot = 0.2;
-  ctx.moveTo(cx - s * w * 0.9, top + 0.012);
-  ctx.quadraticCurveTo(cx, top - 0.015, cx + s * w, top + 0.01);
-  ctx.quadraticCurveTo(cx + s * (w + 0.03), top + 0.06, cx + s * w * 0.97, top + 0.17);
-  ctx.bezierCurveTo(cx + s * w * 0.9, bot + 0.02, cx - s * w * 0.3, bot + 0.04, cx - s * w * 0.72, bot - 0.06);
-  ctx.quadraticCurveTo(cx - s * w * 1.0, 0.03, cx - s * w * 0.9, top + 0.012);
+  const p0 = [cx - s * w * 0.9, top + 0.012];
+  const c1 = [cx, top - 0.015], p1 = [cx + s * w, top + 0.01];
+  const c2 = [cx + s * (w + 0.03), top + 0.06], p2 = [cx + s * w * 0.97, top + 0.17];
+  const c3a = [cx + s * w * 0.9, bot + 0.02], c3b = [cx - s * w * 0.3, bot + 0.04], p3 = [cx - s * w * 0.72, bot - 0.06];
+  const c4 = [cx - s * w * 1.0, 0.03];
+  ctx.moveTo(...p0);
+  if (s > 0) {
+    ctx.quadraticCurveTo(...c1, ...p1); ctx.quadraticCurveTo(...c2, ...p2);
+    ctx.bezierCurveTo(...c3a, ...c3b, ...p3); ctx.quadraticCurveTo(...c4, ...p0);
+  } else { // the mirror image, traced backwards so both lenses wind the same way (the clip/fill union has no holes)
+    ctx.quadraticCurveTo(...c4, ...p3); ctx.bezierCurveTo(...c3b, ...c3a, ...p2);
+    ctx.quadraticCurveTo(...c2, ...p1); ctx.quadraticCurveTo(...c1, ...p0);
+  }
   ctx.closePath();
 }
 
@@ -437,6 +455,7 @@ export class Particles {
     while (this.flakes.length < count) {
       this.flakes.push({ x: Math.random() * W, y: Math.random() * H, r: rand(2, 7) * u, v: rand(60, 180) * u, p: Math.random() * TAU });
     }
+    if (this.flakes.length > count) this.flakes.length = count; // each filter keeps its own density
     for (const f of this.flakes) {
       f.y += f.v * dt;
       f.x += Math.sin(t * 1.5 + f.p) * 25 * u * dt;

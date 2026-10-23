@@ -7,7 +7,10 @@ export const BAND = 0.74; // caption strip starts at 74% of the height
 
 export function countdownLabel(C, now = new Date()) {
   if (!C.seasonStart) return C.startLabel || '';
-  const start = new Date(C.seasonStart);
+  // a plain 'YYYY-MM-DD' means local midnight (JS would read it as UTC); anything unparseable falls back to the label
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(C.seasonStart);
+  const start = ymd ? new Date(+ymd[1], ymd[2] - 1, +ymd[3]) : new Date(C.seasonStart);
+  if (isNaN(start)) return C.startLabel || '';
   if (start <= now) return C.liveLabel || "It's here";
   const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const d1 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
@@ -70,6 +73,11 @@ export function drawBrandFrame(ctx, W, H, C, t, logo, logoPaper) {
   if (logo && logo.complete && logo.naturalWidth) {
     const lh = 82 * u, lw = (logo.naturalWidth / logo.naturalHeight) * lh;
     ctx.drawImage(logo, (W - lw) / 2, 64 * u, lw, lh);
+  } else if (!logo || logo.complete) { // no logo configured, or it failed to load: the brand name in text
+    ctx.fillStyle = hexA(text, 0.95);
+    ctx.font = `700 ${30 * u}px ${DISPLAY}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(C.brand, W / 2, 105 * u, W - 200 * u);
   }
 
   // viewfinder corners on the photo
@@ -132,6 +140,12 @@ function drawStrip(W, H, C, logoPaper) {
   if (logoPaper && logoPaper.complete && logoPaper.naturalWidth) {
     const lh = 92 * u, lw = (logoPaper.naturalWidth / logoPaper.naturalHeight) * lh;
     ctx.drawImage(logoPaper, W - pad - lw, H - 68 * u - lh, lw, lh);
+  } else {
+    ctx.fillStyle = ink;
+    ctx.font = `700 ${24 * u}px ${DISPLAY}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(C.brand, W - pad, H - 82 * u);
+    ctx.textAlign = 'left';
   }
   ctx.fillStyle = hexA(ink, 0.6);
   ctx.font = `400 ${22 * u}px ${MONO}`;
