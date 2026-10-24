@@ -26,7 +26,7 @@ All face tracking runs on the device (Google MediaPipe, vendored locally). Nothi
 Every photo and video is laid out like a page of the Virtual Fudge brochure: the camera image with viewfinder corners, on a paper caption strip with the kicker, the title in Syncopate, `#VirtualFudge · virtualfudge.com` in Roboto Mono and the full-color logo. Fonts are self-hosted in `vendor/fonts` (SIL Open Font License). Older filters (MVP Crown, Star Shades, Game Face) are still in the code; add their ids to `filters` to use them.
 Group selfies work too (up to 3 faces by default).
 
-**Built for every screen:** on phones the filter chips float just above the caption strip and the shutter sits under it; on laptops, desktops, tablets in landscape and phones held sideways the controls move to a rail beside the photo. Hints never cover the face or the caption. Keyboard: **Space** = photo, **← →** = filters, **Esc** = back. The screen stays awake while the camera is open, and slow devices automatically drop to 720p.
+**Built for every screen:** on phones the filter chips float just above the caption strip and the shutter sits under it; on laptops, desktops, tablets in landscape and phones held sideways the controls move to a rail beside the photo. Hints never cover the face or the caption. Keyboard: **Space** or **Enter** = photo, **V** = start/stop a video, **← →** = filters, **Esc** = back. The screen stays awake while the camera is open, and slow devices automatically drop to 720p.
 
 ---
 

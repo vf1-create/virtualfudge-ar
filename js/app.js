@@ -556,6 +556,10 @@ function cancelCountdown() {
   shutter?.classList.remove('counting');
 }
 
+// Mouse clicks on these controls shouldn't park focus on them, so Space/Enter keep taking photos.
+// (Keyboard users still Tab to them, and then Space/Enter activate the focused control.)
+for (const el of [$('#filters'), $('.topbar')]) el.addEventListener('mousedown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
+
 // keyboard: space/enter = photo, V = start/stop video, arrows = filters, escape = back
 document.addEventListener('keydown', (e) => {
   if (e.altKey || e.ctrlKey || e.metaKey) return;
