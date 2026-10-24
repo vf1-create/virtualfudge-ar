@@ -19,7 +19,10 @@
     .card { background: #fff; border-radius: 2px; padding: 22px; box-shadow: inset 0 0 0 1px var(--line); }
     .card h2 { margin: 0 0 14px; font-family: "Syncopate", Arial, sans-serif; font-weight: 700; font-size: 13px; color: var(--brand); }
     label { display: block; font-size: 12px; margin: 14px 0 6px; color: var(--muted); }
-    input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 2px; font: inherit; font-size: 13.5px; background: var(--paper); color: var(--ink); }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 2px; font: inherit; font-size: 16px; background: var(--paper); color: var(--ink); }
+    input[aria-invalid="true"] { border-color: #B3261E; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    .warn { color: #B3261E; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
     button { padding: 11px 16px; border: 0; border-radius: 2px; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; background: var(--ink); color: var(--paper); }
     button.alt { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
@@ -55,6 +58,7 @@
           <option value="email">email: newsletter</option>
         </select>
         <p class="note">Final link: <code id="finalUrl"></code></p>
+        <p class="note warn" id="urlWarn" role="alert" hidden></p>
       </section>
 
       <section class="card" style="margin-top:16px">
@@ -71,9 +75,11 @@
         <p class="note" style="margin-top:0">Stick an NFC tag (NTAG213/215, a few cents each) on a poster, table tent or wristband. Phones open the AR page when tapped, no app needed.</p>
         <div class="row">
           <button id="writeNfc">Write link to NFC tag</button>
+          <button id="lockNfc" class="alt" hidden>Lock tag (permanent)</button>
         </div>
         <p class="note" id="nfcStatus"></p>
         <p class="note">Writing from this page needs Chrome on Android over https. On iPhone use a free app like “NFC Tools” → Write → URL.</p>
+        <p class="note">Lock tags before they go up in public, or anyone with an NFC app can rewrite them to another link. Locking is permanent. In NFC Tools: Other → Lock tag.</p>
       </section>
     </div>
 
@@ -96,14 +102,14 @@
 <script src="../vendor/qrcode.js"></script>
 <script type="module">
   import C from '../js/config.js';
-  import { countdownLabel } from '../js/frame.js';
 
   const $ = (s) => document.querySelector(s);
   const DISPLAY = '"Syncopate", Arial, sans-serif', MONO = '"Roboto Mono", ui-monospace, Menlo, monospace';
   for (const [k, v] of Object.entries(C.colors)) document.documentElement.style.setProperty(`--${k}`, v);
 
   const defaultUrl = new URL('../', location.href).href;
-  $('#url').value = localStorageGet('kit-url') || (location.hostname === 'localhost' ? '' : defaultUrl);
+  const KEY = 'kit-url:' + new URL('../', location.href).pathname; // one saved link per project on a shared origin
+  $('#url').value = localStorageGet(KEY) || (location.hostname === 'localhost' ? '' : defaultUrl);
   $('#url').placeholder = defaultUrl;
   let size = [1080, 1350];
   const logo = new Image();
@@ -114,15 +120,33 @@
   function localStorageGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
   function localStorageSet(k, v) { try { localStorage.setItem(k, v); } catch {} }
 
-  function finalUrl() {
-    let u;
-    try { u = new URL($('#url').value || defaultUrl); } catch { u = new URL(defaultUrl); }
-    u.searchParams.set('src', $('#src').value);
+  const LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/;
+  function parseUrl() {
+    let raw = $('#url').value.trim() || defaultUrl;
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = 'https://' + raw;
+    try {
+      const u = new URL(raw);
+      if (u.protocol === 'https:' || (u.protocol === 'http:' && LOCAL.test(u.hostname))) return u;
+    } catch {}
+    return null;
+  }
+  function finalUrl(src = $('#src').value) {
+    const u = parseUrl();
+    if (!u) return null;
+    u.searchParams.set('src', src);
     return u.href;
   }
 
-  function drawQR(cv, url, x, y, s, { quiet = 2, light = C.colors.paper } = {}) {
-    const qr = qrcode(0, 'Q'); qr.addData(url); qr.make();
+  function makeQR(url) {
+    for (const level of ['Q', 'L']) {
+      try { const qr = qrcode(0, level); qr.addData(url); qr.make(); return qr; } catch {}
+    }
+    return null; // too long for any QR code
+  }
+
+  function drawQR(cv, url, x, y, s, { quiet = 4, light = C.colors.paper } = {}) {
+    const qr = url && makeQR(url);
+    if (!qr) return false;
     const n = qr.getModuleCount(), cell = s / (n + quiet * 2), ctx = cv.getContext('2d');
     const finder = (r, c) => (r < 7 && (c < 7 || c >= n - 7)) || (r >= n - 7 && c < 7);
     ctx.fillStyle = light; ctx.fillRect(x, y, s, s);
@@ -131,6 +155,14 @@
       ctx.fillStyle = finder(r, c) ? C.colors.brand : C.colors.ink; // brown finder squares, like the brochure QRs
       ctx.fillRect(x + (c + quiet) * cell, y + (r + quiet) * cell, Math.ceil(cell), Math.ceil(cell));
     }
+    return true;
+  }
+
+  function staticLabel() {
+    const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(C.seasonStart || '');
+    const start = ymd ? new Date(+ymd[1], ymd[2] - 1, +ymd[3]) : null;
+    if (C.startLabel || !start) return C.startLabel || '';
+    return start <= new Date() ? (C.liveLabel || '') : start.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
   }
 
   let grain = null;
@@ -165,7 +197,9 @@
   // A page in the brochure's language: paper, viewfinder corners, Syncopate + Roboto Mono, left-aligned
   function drawPoster() {
     const [W, H] = size, cv = $('#poster'), ctx = cv.getContext('2d'), u = W / 1080;
-    cv.width = W; cv.height = H;
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } // resizing an A4 canvas reallocates ~35 MB
+    const story = H / W > 1.7; // 9:16: Instagram/TikTok cover ~250px at the top and bottom with their own controls
+    const safeTop = story ? 250 * u : 0, safeBottom = story ? 150 * u : 0;
     const { paper, ink, brand } = C.colors;
     const pad = 110 * u, maxW = W - pad * 2;
     ctx.fillStyle = paper; ctx.fillRect(0, 0, W, H);
@@ -178,7 +212,7 @@
     brackets(ctx, 48 * u, 48 * u, W - 48 * u, H - 48 * u, 46 * u);
 
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    let y = 130 * u;
+    let y = 130 * u + safeTop;
     if (logo.complete && logo.naturalWidth) {
       const lh = 130 * u, lw = (logo.naturalWidth / logo.naturalHeight) * lh;
       ctx.drawImage(logo, pad, y, lw, lh);
@@ -190,21 +224,30 @@
     y += 120 * u;
     ctx.fillStyle = brand;
     ctx.font = `700 ${30 * u}px ${DISPLAY}`;
-    ctx.fillText([C.kicker, countdownLabel(C)].filter(Boolean).join(' · '), pad, y, maxW);
+    ctx.fillText([C.kicker, staticLabel()].filter(Boolean).join(' · '), pad, y, maxW);
     y += 90 * u;
-    ctx.font = `400 ${78 * u}px ${DISPLAY}`;
-    y = wrap(ctx, C.seasonTitle, pad, y, maxW * 0.92, 92 * u) + 70 * u;
+    // Syncopate is wide: shrink the title until its longest word fits on a line
+    const titleW = maxW * 0.92, longest = C.seasonTitle.split(' ').reduce((a, w) => (w.length > a.length ? w : a), '');
+    let ts = 78;
+    ctx.font = `400 ${ts * u}px ${DISPLAY}`;
+    while (ts > 36 && ctx.measureText(longest).width > titleW) ctx.font = `400 ${--ts * u}px ${DISPLAY}`;
+    y = wrap(ctx, C.seasonTitle, pad, y, titleW, ts * 1.18 * u) + 70 * u;
 
     ctx.fillStyle = ink;
     ctx.font = `400 ${33 * u}px ${MONO}`;
-    wrap(ctx, 'Scan or tap to try our holiday AR selfie filter. No app needed.', pad, y, maxW * 0.78, 52 * u);
+    wrap(ctx, C.posterLine || 'Scan to try our AR selfie filter. No app needed.', pad, y, maxW * 0.78, 52 * u);
 
     // QR bottom-right, caption to its left, as on the brochure cover
     const qs = Math.min(W * 0.34, H * 0.25);
-    const qx = W - pad - qs, qy = H - 120 * u - qs;
-    drawQR(cv, finalUrl(), qx, qy, qs, { quiet: 1 });
+    const qx = W - pad - qs, qy = H - 120 * u - safeBottom - qs;
+    drawQR(cv, finalUrl(), qx, qy, qs, { quiet: 1 }); // plain paper around it, so a 1-module margin is enough
     ctx.fillStyle = ink; ctx.font = `400 ${30 * u}px ${MONO}`;
-    ctx.fillText('Scan to try →', pad, qy + qs - 104 * u);
+    const cy = qy + qs - 104 * u, tw = ctx.measureText('Scan to try').width;
+    ctx.fillText('Scan to try', pad, cy);
+    // the font subset has no →, so draw it
+    const ax = pad + tw + 18 * u, ay = cy - 10 * u, al = 34 * u;
+    ctx.strokeStyle = ink; ctx.lineWidth = 2.6 * u; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + al, ay); ctx.moveTo(ax + al - 11 * u, ay - 11 * u); ctx.lineTo(ax + al, ay); ctx.lineTo(ax + al - 11 * u, ay + 11 * u); ctx.stroke();
     ctx.fillStyle = brand;
     ctx.fillText(C.hashtag, pad, qy + qs - 52 * u);
     ctx.fillStyle = 'rgba(35,31,32,.62)'; ctx.font = `400 ${26 * u}px ${MONO}`;
@@ -224,39 +267,78 @@
   }
 
   function refresh() {
-    localStorageSet('kit-url', $('#url').value);
-    $('#finalUrl').textContent = finalUrl();
-    const q = $('#qrPreview');
-    drawQR(q, finalUrl(), 0, 0, q.width);
+    const url = finalUrl(), q = $('#qrPreview'), warn = $('#urlWarn');
+    $('#finalUrl').textContent = url || '—';
+    q.getContext('2d').clearRect(0, 0, q.width, q.height);
+    const ok = !!url && drawQR(q, url, 0, 0, q.width);
+    warn.hidden = ok;
+    warn.textContent = !url ? 'That isn’t an https:// link. Phone cameras only work on https sites.' : 'That link is too long for a QR code. Try a shorter one.';
+    $('#url').setAttribute('aria-invalid', String(!ok));
+    for (const id of ['dlQR', 'copyLink', 'dlPoster', 'writeNfc']) $('#' + id).disabled = !ok;
+    clearTimeout(copiedTimer); $('#copyLink').textContent = 'Copy link';
     drawPoster();
   }
+  let copiedTimer = 0, pending = 0;
+  const schedule = () => { if (!pending) pending = requestAnimationFrame(() => { pending = 0; refresh(); }); }; // one redraw per frame while typing
 
   function download(canvas, name) {
     canvas.toBlob((b) => {
       const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(b), download: name });
-      a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     }, 'image/png');
   }
 
-  $('#url').addEventListener('input', refresh);
+  $('#url').addEventListener('input', () => {
+    const v = $('#url').value.trim();
+    localStorageSet(KEY, v && v !== defaultUrl ? v : ''); // saved only when edited, never the page's own default
+    schedule();
+  });
   $('#src').addEventListener('change', refresh);
   $('#dlQR').addEventListener('click', () => download($('#qrPreview'), `qr-${$('#src').value}.png`));
   $('#dlPoster').addEventListener('click', () => download($('#poster'), `promo-${size.join('x')}-${$('#src').value}.png`));
-  $('#copyLink').addEventListener('click', async () => { try { await navigator.clipboard.writeText(finalUrl()); $('#copyLink').textContent = 'Copied ✓'; } catch {} });
+  $('#copyLink').addEventListener('click', async () => {
+    const btn = $('#copyLink');
+    try { await navigator.clipboard.writeText(finalUrl()); btn.textContent = 'Copied ✓'; }
+    catch { // no clipboard access (e.g. plain http): select the link so it can be copied by hand
+      const r = document.createRange(); r.selectNodeContents($('#finalUrl'));
+      getSelection().removeAllRanges(); getSelection().addRange(r);
+      btn.textContent = 'Selected: copy it above';
+    }
+    clearTimeout(copiedTimer); copiedTimer = setTimeout(() => { btn.textContent = 'Copy link'; }, 2500);
+  });
   document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
     document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', x === b));
-    size = b.dataset.size.split('x').map(Number); drawPoster();
+    size = b.dataset.size.split('x').map(Number);
+    const src = $('#src'), print = size[0] > 2000;
+    if (print && src.value !== 'poster') src.value = 'poster';
+    else if (!print && src.value === 'poster') src.value = 'ig-post';
+    refresh();
   }));
 
-  $('#writeNfc').addEventListener('click', async () => {
+  let nfc = null; // the attempt in progress: { ctl, timer }
+  async function nfcTask(run, waiting, done) {
     const status = $('#nfcStatus');
     if (!('NDEFReader' in window)) { status.textContent = 'Web NFC isn’t available here. Use Chrome on Android, or the NFC Tools app.'; return; }
-    try {
-      status.textContent = 'Hold the tag against the back of your phone…';
-      const url = new URL(finalUrl()); url.searchParams.set('src', 'nfc-booth');
-      await new NDEFReader().write({ records: [{ recordType: 'url', data: url.href }] });
-      status.textContent = '✓ Tag written! Tap it with any phone to test.';
-    } catch (e) { status.textContent = 'Couldn’t write: ' + e.message; }
+    if (nfc) { nfc.ctl.abort(); clearTimeout(nfc.timer); }
+    const me = nfc = { ctl: new AbortController() };
+    me.timer = setTimeout(() => { me.timedOut = true; me.ctl.abort(); }, 60000);
+    status.textContent = waiting;
+    try { await run(new NDEFReader(), me.ctl.signal); if (nfc === me) status.textContent = done; return true; }
+    catch (e) {
+      if (nfc !== me) return; // replaced by a newer tap
+      status.textContent = me.timedOut ? 'No tag found. Tap the button to try again.' : 'Couldn’t do it: ' + e.message;
+    } finally { clearTimeout(me.timer); if (nfc === me) nfc = null; }
+  }
+  $('#writeNfc').addEventListener('click', async () => {
+    const url = finalUrl('nfc-booth');
+    const ok = await nfcTask((r, signal) => r.write({ records: [{ recordType: 'url', data: url }] }, { signal }),
+      'Hold the tag against the back of your phone…', '✓ Tag written! Tap it with any phone to test, then lock it.');
+    if (ok) $('#lockNfc').hidden = false;
+  });
+  $('#lockNfc').addEventListener('click', async () => {
+    if (!confirm('Locking is permanent: nobody, including you, can change this tag again. Lock it?')) return;
+    const ok = await nfcTask((r, signal) => r.makeReadOnly({ signal }), 'Hold the same tag against your phone to lock it…', '✓ Tag locked.');
+    if (ok) $('#lockNfc').hidden = true;
   });
 
   refresh();

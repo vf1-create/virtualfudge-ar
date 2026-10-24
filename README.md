@@ -74,8 +74,9 @@ Make sure `.wasm` is served as `application/wasm` (most hosts do this already).
 Open **`/tools/kit.html`** on your deployed site:
 
 - **QR code PNG** for any channel, tagged with a `src` (e.g. `?src=poster`) so you can see which channel works
-- **Write NFC tags** straight from Chrome on Android (NTAG213/215 stickers). On iPhone, use the free *NFC Tools* app → Write → URL.
-- **Ready-to-post images**: Feed 4:5, Story 9:16 and A4 print posters with your title, countdown, QR and hashtag
+- **Write NFC tags** straight from Chrome on Android (NTAG213/215 stickers), then **lock** them so nobody can rewrite a public tag. On iPhone, use the free *NFC Tools* app → Write → URL, then Other → Lock tag.
+- **Ready-to-post images**: Feed 4:5, Story 9:16 (kept clear of the story controls) and A4 print posters with your title, season label, QR and hashtag. The A4 poster tags its QR `src=poster` automatically; the body line comes from `posterLine` in `config.js`.
+- Type a bare domain and the kit adds `https://`; anything that won't work on a phone camera (plain http, or a link too long for a QR) is flagged and the downloads stay off until it's fixed.
 
 Ideas: put the Story image up with a link sticker; put NFC stickers on table tents, wristbands or the ticket booth; show the poster QR on the venue big screen at halftime.
 

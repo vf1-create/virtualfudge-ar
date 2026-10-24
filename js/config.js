@@ -13,6 +13,7 @@ export default {
   startLabel: 'Holiday 2026',       // shown next to the kicker when there's no countdown
   liveLabel: "It's here",           // shown once seasonStart has passed
   intro: 'Try on our holiday AR: fudge shades, a digital twin, a little snow. Snap it, share it.',
+  posterLine: 'Scan to try our holiday AR selfie filter. No app needed.', // body copy on the promo-kit posters
 
   hashtag: '#VirtualFudge',
   handle: '@Virtual_Fudge',         // asked for on the result screen and in the caption strip
