@@ -9,6 +9,7 @@
     "camera": "node tests/make-camera.mjs"
   },
   "devDependencies": {
+    "axe-core": "^4.10.2",
     "playwright": "^1.55.0"
   }
 }

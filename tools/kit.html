@@ -34,7 +34,7 @@
     #nfcStatus { color: var(--ink); }
     .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
     .tabs button { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); padding: 8px 12px; font-size: 12.5px; }
-    .tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); box-shadow: none; }
+    .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); box-shadow: none; }
   </style>
 </head>
 <body>
@@ -85,10 +85,10 @@
 
     <section class="card">
       <h2>4 · Social post / poster</h2>
-      <div class="tabs" role="tablist">
-        <button data-size="1080x1350" aria-selected="true">Feed 4:5</button>
-        <button data-size="1080x1920">Story 9:16</button>
-        <button data-size="2480x3508">Print A4</button>
+      <div class="tabs" role="group" aria-label="Image size">
+        <button data-size="1080x1350" aria-pressed="true">Feed 4:5</button>
+        <button data-size="1080x1920" aria-pressed="false">Story 9:16</button>
+        <button data-size="2480x3508" aria-pressed="false">Print A4</button>
       </div>
       <canvas id="poster"></canvas>
       <div class="row">
@@ -307,7 +307,7 @@
     clearTimeout(copiedTimer); copiedTimer = setTimeout(() => { btn.textContent = 'Copy link'; }, 2500);
   });
   document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
-    document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-selected', x === b));
+    document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-pressed', x === b));
     size = b.dataset.size.split('x').map(Number);
     const src = $('#src'), print = size[0] > 2000;
     if (print && src.value !== 'poster') src.value = 'poster';
