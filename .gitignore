@@ -1,2 +1,4 @@
 certs/
 node_modules/
+tests/out/
+tests/fixtures/

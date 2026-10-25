@@ -1,0 +1,14 @@
+{
+  "name": "virtualfudge-ar",
+  "private": true,
+  "description": "Virtual Fudge WebAR selfie filter. The site itself needs no build step; this file only sets up the browser tests.",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node tests/run.mjs",
+    "camera": "node tests/make-camera.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.55.0"
+  }
+}

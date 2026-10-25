@@ -53,6 +53,19 @@ node serve.mjs --https    # https://<your-LAN-IP>:8443 to test on your phone ove
 `--https` makes a throwaway self-signed certificate (needs `openssl`). Your phone will warn about it; tap *Advanced → Proceed*.
 Browsers only allow the camera on `https://` or `localhost`.
 
+### Run the tests
+
+Sixty browser checks cover the camera flow, keyboard use, nine screen shapes from iPhone SE to a 1080p desktop, the promo kit and the offline cache. They drive a headless Chrome with a fake webcam.
+
+```bash
+npm install && npx playwright install chromium   # once
+npm run camera -- path/to/portrait.jpg           # once: any front-facing face photo becomes the fake webcam (needs ffmpeg)
+npm test                                         # everything, about 4 minutes
+npm test -- kit devices                          # just some suites: app, devices, kit, offline
+```
+
+Screenshots of every screen and device, the posters and a sample clip land in `tests/out/`. Run the tests before deploying a change.
+
 ## 3. Host it
 
 It's a plain static folder (about 23 MB, mostly the face-tracking engine), so any HTTPS host works.
