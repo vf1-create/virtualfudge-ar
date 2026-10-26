@@ -1,6 +1,7 @@
 {
   "name": "Virtual Fudge AR",
   "short_name": "VF AR",
+  "description": "Virtual Fudge AR selfie filter: snap, share, no app needed.",
   "start_url": "./?src=homescreen",
   "display": "standalone",
   "orientation": "portrait",
@@ -10,6 +11,11 @@
     {
       "src": "assets/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png"
     },
     {

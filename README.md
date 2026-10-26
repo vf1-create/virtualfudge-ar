@@ -37,6 +37,7 @@ Edit **`js/config.js`**. There's no build step.
 - `brand`, `logo` (white, over the photo), `logoOnPaper` (full color), `kicker`, `intro`, `handle`, `website`
 - `seasonTitle`, `seasonShort`, `seasonStart`, `startLabel`: the countdown updates itself daily
 - `hashtag`, `shareText`, `shareUrl`, `ctaLabel`/`ctaUrl` (e.g. “Get your tickets” on the result screen)
+- `posterLine`: the sentence on the promo-kit posters
 - `colors`: paper, ink, brand brown and the logo's caramel/chocolate re-theme the filters, frame, UI and posters
 - `filters`: choose and reorder filters
 - `output`: 1080×1920 by default; use 720×1280 if you're targeting older phones

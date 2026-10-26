@@ -9,6 +9,8 @@
 		Permissions-Policy "camera=(self)"
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
+		# no other site may frame the camera page (clickjacking)
+		Content-Security-Policy "frame-ancestors 'self'"
 	}
 	# Engine files: cache for a day (the service worker keeps its own copy). App files: always revalidate.
 	@vendor path /vendor/*

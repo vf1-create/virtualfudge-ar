@@ -33,11 +33,12 @@ export default async function (check) {
       await p.click('#retakeBtn'); await waitScreen(p, 'ar');
       // headless Chromium's H.264 encoder sometimes returns an empty clip; the app then says so and
       // moves on to the next format (mp4/avc1 → mp4 → webm), so allow one hold per format
+      // (the test browser renders in software, so give the encoder a longer clip than a phone would need)
       for (let k = 0; k < 3; k++) {
-        await holdShutter(p, 2500); await waitScreen(p, 'result', 6000);
+        await holdShutter(p, 4000); await waitScreen(p, 'result', 10000);
         r = await result(p); if (r.kind === 'video') break;
       }
-      check('phone: hold records a video', r.kind === 'video' && r.size > 10000, JSON.stringify(r));
+      check('phone: hold records a video', r.kind === 'video' && r.size > 10000, JSON.stringify({ ...r, toast: await p.textContent('#toast'), tried: await p.evaluate(() => window.__ar.badTypes) }));
       if (r.kind === 'video') {
         const bytes = await p.evaluate(async () => [...new Uint8Array(await window.__ar.blob.arrayBuffer())]);
         fs.writeFileSync(path.join(OUT, `clip.${r.type.includes('mp4') ? 'mp4' : 'webm'}`), Buffer.from(bytes));
