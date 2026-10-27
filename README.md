@@ -56,7 +56,7 @@ Browsers only allow the camera on `https://` or `localhost`.
 
 ### Run the tests
 
-68 browser checks cover the camera flow, keyboard use, nine screen shapes from iPhone SE to a 1080p desktop, the promo kit, the offline cache and an automated accessibility scan (axe-core, WCAG 2.1 AA) of every screen. They drive a headless Chrome with a fake webcam.
+72 browser checks cover the camera flow, keyboard use, nine screen shapes from iPhone SE to a 1080p desktop, the promo kit (including scanning every QR code it makes), the offline cache and an automated accessibility scan (axe-core, WCAG 2.1 AA) of every screen. They drive a headless Chrome with a fake webcam.
 
 ```bash
 npm install && npx playwright install chromium   # once

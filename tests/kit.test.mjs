@@ -1,7 +1,19 @@
 // The promo kit: link checks, QR codes, posters, NFC writing and locking.
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { launch, page, BASE, OUT } from './lib.mjs';
+
+const JSQR = fs.readFileSync(createRequire(import.meta.url).resolve('jsqr/dist/jsQR.js'), 'utf8');
+// scan a canvas the way a phone camera would and return the link it opens (null if unreadable).
+// It's scaled to 700px wide first: jsQR misreads very large modules (the 1024px QR at full size),
+// although OpenCV and phone scanners read it fine.
+const scan = (k, sel) => k.evaluate((sel) => {
+  const c = document.querySelector(sel), w = 700, h = Math.round(c.height * w / c.width);
+  const t = Object.assign(document.createElement('canvas'), { width: w, height: h }), g = t.getContext('2d');
+  g.drawImage(c, 0, 0, w, h);
+  return jsQR(g.getImageData(0, 0, w, h).data, w, h)?.data ?? null;
+}, sel);
 
 export default async function (check) {
   const b = await launch();
@@ -53,10 +65,16 @@ export default async function (check) {
       check(`${t}: kit#13 body copy from config`, drawn.some((d) => d.s.includes('Custom poster line')), '');
       if (t.startsWith('Story')) { const ys = drawn.map((d) => d.y); check('Story: kit#6 text stays out of the top/bottom 250px', Math.min(...ys) > 250 && Math.max(...ys) < 1920 - 250, `y ${Math.round(Math.min(...ys))}–${Math.round(Math.max(...ys))}`); }
     }
-    // save the real posters
-    await k.unroute('**/js/config.js'); await k.goto(KIT); await k.fill('#url', 'https://vf1-create.github.io/virtualfudge-ar/'); await k.waitForTimeout(1000);
+    // save the real posters, and scan every QR code like a phone would
+    const LIVE = 'https://vf1-create.github.io/virtualfudge-ar/';
+    await k.unroute('**/js/config.js'); await k.goto(KIT); await k.fill('#url', LIVE); await k.waitForTimeout(1000);
+    await k.addScriptTag({ content: JSQR });
+    const qr = await scan(k, '#qrPreview');
+    check('downloadable QR scans to the link with its source tag', qr === LIVE + '?src=ig-post', qr);
     for (const t of ['Feed 4:5', 'Story 9:16', 'Print A4']) {
       await k.click(`text=${t}`); await k.waitForTimeout(250);
+      const got = await scan(k, '#poster'), want = LIVE + (t.startsWith('Print') ? '?src=poster' : '?src=ig-post');
+      check(`${t} poster QR scans to ${want.split('?')[1]}`, got === want, got);
       const data = await k.evaluate(() => document.querySelector('#poster').toDataURL('image/png'));
       fs.writeFileSync(path.join(OUT, `poster-${t.split(' ')[0]}.png`), Buffer.from(data.split(',')[1], 'base64'));
     }
