@@ -119,12 +119,15 @@ export default async function (check) {
       await open(p); await p.click('#startBtn', { force: true }); await ready(p);
       await p.click('#timerBtn');
       check('self-timer shows its 3 s badge', (await p.textContent('#timerBtn .badge')) === '3');
+      // cancel with the 10 s timer, so a slow test machine can't run out the clock before the tap lands
+      await p.click('#timerBtn');
       await p.click('#shutter'); await p.waitForTimeout(300);
       const c = await p.evaluate(() => ({ text: document.querySelector('#countNum').textContent, opacity: getComputedStyle(document.querySelector('#countNum')).opacity }));
-      check('reduced motion: countdown digits stay visible', c.text === '3' && c.opacity === '1', JSON.stringify(c));
-      await p.click('#shutter'); await p.waitForTimeout(4000);
-      check('tapping during the countdown cancels it', (await screen(p)) === 'ar', await screen(p));
-      await p.click('#shutter'); await waitScreen(p, 'result', 6000);
+      check('reduced motion: countdown digits stay visible', /^(10|9)$/.test(c.text) && c.opacity === '1', JSON.stringify(c));
+      await p.click('#shutter'); await p.waitForTimeout(1500);
+      check('tapping during the countdown cancels it', (await screen(p)) === 'ar' && !(await p.textContent('#countNum')), await screen(p));
+      await p.click('#timerBtn'); await p.click('#timerBtn'); // 10 s → off → 3 s
+      await p.click('#shutter'); await waitScreen(p, 'result', 10000);
       check('self-timer takes the photo when it ends', (await result(p)).kind === 'photo');
       await p.context().close();
     }
