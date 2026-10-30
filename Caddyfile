@@ -2,6 +2,10 @@
 # Set DOMAIN, e.g. ar.yourbrand.com, and point its DNS A record at this server.
 {$DOMAIN:localhost} {
 	root * /srv
+	# Compresses the big engine downloads. Caddy's default type list already covers everything
+	# that matters here: the 9.6 MB wasm (application/wasm, shrinks ~70%) and all text files.
+	# The face model (.task) is left out on purpose: it's served as a generic binary and only
+	# shrinks ~11%, not worth pinning a copy of Caddy's internal type list to capture.
 	encode zstd gzip
 	file_server
 
