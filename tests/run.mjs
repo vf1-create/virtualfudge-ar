@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, BASE, PORT, CAMERA, reporter } from './lib.mjs';
 
-const SUITES = ['app', 'devices', 'kit', 'offline', 'a11y'];
+const SUITES = ['app', 'devices', 'kit', 'offline', 'a11y', 'brand'];
 const pick = process.argv.slice(2).filter((s) => SUITES.includes(s));
 if (!fs.existsSync(CAMERA)) {
   console.error(`No fake webcam feed at ${path.relative(process.cwd(), CAMERA)}.\nMake one from any front-facing portrait: node tests/make-camera.mjs portrait.jpg`);

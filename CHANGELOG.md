@@ -2,6 +2,11 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Fri Oct 30
+- New rebrand test: the site is loaded under a made-up brand and every surface (intro, result screen, share caption, CTA) must follow `config.js`, including sparse configs with no handle or CTA.
+- Confirmed the self-hosted server already compresses the big engine download (9.6 MB shrinks ~70%); noted in the Caddyfile why the face model is left uncompressed.
+- The three video checks retry with longer clips on slow test machines.
+
 ## Thu Oct 29
 - iPhone home-screen polish: the icon is labeled "VF AR" and the status bar matches the light page.
 - Self-timer test made reliable on slow machines (cancels during the 10-second countdown).

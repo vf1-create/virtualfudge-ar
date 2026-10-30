@@ -56,13 +56,13 @@ Browsers only allow the camera on `https://` or `localhost`.
 
 ### Run the tests
 
-72 browser checks cover the camera flow, keyboard use, nine screen shapes from iPhone SE to a 1080p desktop, the promo kit (including scanning every QR code it makes), the offline cache and an automated accessibility scan (axe-core, WCAG 2.1 AA) of every screen. They drive a headless Chrome with a fake webcam.
+82 browser checks cover the camera flow, keyboard use, nine screen shapes from iPhone SE to a 1080p desktop, the promo kit (including scanning every QR code it makes), the offline cache, an automated accessibility scan (axe-core, WCAG 2.1 AA) of every screen, and a rebrand check that loads the site under a made-up brand and verifies every surface follows config.js. They drive a headless Chrome with a fake webcam.
 
 ```bash
 npm install && npx playwright install chromium   # once
 npm run camera -- path/to/portrait.jpg           # once: any front-facing face photo becomes the fake webcam (needs ffmpeg)
 npm test                                         # everything, about 4 minutes
-npm test -- kit devices                          # just some suites: app, devices, kit, offline, a11y
+npm test -- kit devices                          # just some suites: app, devices, kit, offline, a11y, brand
 ```
 
 Screenshots of every screen and device, the posters and a sample clip land in `tests/out/`. Run the tests before deploying a change.

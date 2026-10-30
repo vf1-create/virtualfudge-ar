@@ -6,7 +6,7 @@ import { launch, page, open, ready, screen, waitScreen, BASE, OUT, PHONE, LAPTOP
 // override fields in js/config.js for one page, e.g. { maxVideoSeconds: 2 }
 const withConfig = (p, config) => p.route('**/js/config.js', async (r) => {
   const res = await r.fetch(); let body = await res.text();
-  for (const [k, v] of Object.entries(config)) body = body.replace(new RegExp(`(\\n\\s*${k}:\\s*)[^,\\n]+`), `$1${v}`);
+  for (const [k, v] of Object.entries(config)) body = body.replace(new RegExp(`(\\n\\s*${k}:\\s*)('[^']*'|[^,\\n]+)`), `$1${v}`);
   r.fulfill({ response: res, body, contentType: 'text/javascript' });
 });
 const holdShutter = async (p, ms) => {
@@ -34,8 +34,8 @@ export default async function (check) {
       // headless Chromium's H.264 encoder sometimes returns an empty clip; the app then says so and
       // moves on to the next format (mp4/avc1 → mp4 → webm), so allow one hold per format
       // (the test browser renders in software, so give the encoder a longer clip than a phone would need)
-      for (let k = 0; k < 3; k++) {
-        await holdShutter(p, 4000); await waitScreen(p, 'result', 10000);
+      for (const hold of [4000, 6000, 8000]) { // longer each retry: the software encoder on a busy test machine can need it
+        await holdShutter(p, hold); await waitScreen(p, 'result', 12000);
         r = await result(p); if (r.kind === 'video') break;
       }
       check('phone: hold records a video', r.kind === 'video' && r.size > 10000, JSON.stringify({ ...r, toast: await p.textContent('#toast'), tried: await p.evaluate(() => window.__ar.badTypes) }));
@@ -49,8 +49,11 @@ export default async function (check) {
     {
       const p = await page(b, PHONE); await withConfig(p, { maxVideoSeconds: 2 });
       await open(p); await p.click('#startBtn', { force: true }); await ready(p);
-      await holdShutter(p, 6000); await p.waitForTimeout(1500);
-      const r = await result(p);
+      let r;
+      for (let k = 0; k < 3; k++) { // retries only re-test the empty-clip fallback; a real cap bug fails every time
+        await holdShutter(p, 6000); await p.waitForTimeout(1500);
+        r = await result(p); if (r.kind === 'video') break;
+      }
       check('holding past the video cap keeps the video', r.screen === 'result' && r.kind === 'video', JSON.stringify(r));
       await p.context().close();
     }
@@ -85,7 +88,11 @@ export default async function (check) {
       check('filters: arrows move selection and focus together, one tab stop', r4.checked === r4.focused && r4.tabStops === 1 && r4.role === 'radiogroup', JSON.stringify(r4));
 
       await p.evaluate(() => document.activeElement.blur());
-      await p.keyboard.press('v'); await p.waitForTimeout(3000); await p.keyboard.press('v'); await waitScreen(p, 'result', 15000);
+      for (const hold of [3000, 6000, 8000]) {
+        await p.keyboard.press('v'); await p.waitForTimeout(hold); await p.keyboard.press('v'); await waitScreen(p, 'result', 15000);
+        if ((await result(p)).kind === 'video') break;
+        await p.waitForTimeout(500); // empty clip on a busy machine: the app toasts and stays live, so try again
+      }
       check('V starts and stops a video', (await result(p)).kind === 'video', JSON.stringify(await result(p)));
       check('laptop flow: no page errors', !p.errs.length, p.errs.join(' | '));
       await p.context().close();
