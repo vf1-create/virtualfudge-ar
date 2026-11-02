@@ -1,6 +1,8 @@
 // Caches the big engine files (face tracking WASM, model, fonts) so repeat visits and
 // booth tablets start instantly. App files (HTML/JS/CSS) always come from the network,
 // so published edits show up right away. If you replace anything in vendor/, bump CACHE.
+// (Nov 2: the unused italic Roboto Mono face was removed; this edit alone re-runs install, which
+// refreshes the precached fonts.css in place without making repeat visitors re-download the engine.)
 const CACHE = 'vf-engine-v2';
 const ENGINE = /\/vendor\/(mediapipe|models|fonts)\//;
 // fetched on install so even the first visit leaves a complete cache behind

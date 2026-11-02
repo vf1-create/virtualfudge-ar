@@ -2,6 +2,9 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Mon Nov 2
+- Removed a leftover italic font file nothing used since the Oct 20 restyle; one less file to download and audit.
+
 ## Fri Oct 30
 - New rebrand test: the site is loaded under a made-up brand and every surface (intro, result screen, share caption, CTA) must follow `config.js`, including sparse configs with no handle or CTA.
 - Confirmed the self-hosted server already compresses the big engine download (9.6 MB shrinks ~70%); noted in the Caddyfile why the face model is left uncompressed.
