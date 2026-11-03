@@ -206,6 +206,10 @@ for (const [store, name, n] of [['nyc', 'Roland Store New York City', 7], ['lond
   await p.waitForTimeout(1500);
   const b = await p.evaluate(() => ({ hits: window.__audio.hits, now: !!document.querySelector('.pad.now') }));
   check('Audio', 'Play runs the sequencer: hits scheduled and the playhead moves', b.hits > 5 && b.now, JSON.stringify(b));
+  const lit = await p.evaluate(() => { const l = window.__heritage.leds; return l && { n: l.led.filter(Boolean).length, lit: l.led.filter((m) => m.emissiveFactor[0] > 0.5).length }; });
+  check('Cards', 'The 3D 808 follows the sequencer: its 16 step LEDs light up with the pattern and the playhead', lit && lit.n === 16 && lit.lit >= 1, JSON.stringify(lit));
+  const hot = await p.evaluate(() => document.querySelectorAll('model-viewer .hot').length);
+  check('Cards', 'Three labelled hotspots pinned to the 3D 808 (step keys, tempo, voices)', hot === 3);
   await p.tap('#play');
   // render every voice offline and measure it, to prove each one makes real sound (not silence)
   const levels = await p.evaluate(async () => {

@@ -84,8 +84,11 @@ export function tr808() {
     const x0 = -0.19, pitch = 0.0315;
     for (let i = 0; i < 16; i++) {
       const x = x0 + i * pitch + Math.floor(i / 4) * 0.004;
-      box(p, 0.026, 0.009, 0.034, groups[Math.floor(i / 4)], x, 0, -0.032, { rough: 0.35 });
-      cyl(p, 0.0022, 0.0025, 0x5a0d0a, x, 0, -0.062, { rough: 0.3 }); // step LED
+      // each step key and LED gets its own named material so the page can light them in time with the beat
+      const key = box(p, 0.026, 0.009, 0.034, groups[Math.floor(i / 4)], x, 0, -0.032, { rough: 0.35 });
+      key.material = key.material.clone(); key.material.name = `key-${i}`;
+      const led = cyl(p, 0.0034, 0.003, 0x5a0d0a, x, 0, -0.062, { rough: 0.3 }); // step LED
+      led.material = led.material.clone(); led.material.name = `led-${i}`;
       // the printed color band above each group
       if (i % 4 === 0) box(p, pitch * 4 - 0.004, 0.0008, 0.006, groups[Math.floor(i / 4)], x + pitch * 1.5, 0, -0.078);
     }

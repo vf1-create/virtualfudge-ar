@@ -88,15 +88,17 @@ async function openCard(id, push) {
   Object.entries({
     src: `models/${i.id}.glb`, 'ios-src': `models/${i.id}.usdz`, alt: `A 3D model of the ${i.model}, built for this demo`,
     ar: '', 'ar-modes': 'webxr scene-viewer quick-look', 'ar-scale': 'fixed', 'camera-controls': '', 'touch-action': 'pan-y',
-    'shadow-intensity': '1', 'shadow-softness': '0.8', exposure: '1.05', 'camera-orbit': '0deg 62deg auto', 'interaction-prompt': 'none',
+    'shadow-intensity': '1.1', 'shadow-softness': '0.7', exposure: '1.1', 'environment-image': 'neutral', 'camera-orbit': '0deg 62deg auto', 'interaction-prompt': 'none',
     'auto-rotate': '', 'auto-rotate-delay': '2500', 'rotation-per-second': '12deg', loading: 'eager',
   }).forEach(([k, v]) => mv.setAttribute(k, v));
-  mv.innerHTML = `<button slot="ar-button" class="ar-btn" type="button">See it in AR</button><div slot="progress-bar"></div>`;
+  mv.innerHTML = `<button slot="ar-button" class="ar-btn" type="button">See it in AR</button><div slot="progress-bar"></div>` + (HOTSPOTS[i.id] || []).map(([n, pos, text]) =>
+    `<button slot="hotspot-${n}" class="hot" type="button" data-position="${pos}" data-normal="0m 1m 0m" tabindex="-1"><span>${text}</span></button>`).join('');
   viewer.appendChild(mv);
   requestAnimationFrame(() => requestAnimationFrame(() => viewer.classList.add('lifted')));
   await loadViewer();
   mv.addEventListener('load', async () => {
     if (current !== i) return;
+    bindModel(mv);
     if (!mv.canActivateAR) {
       // desktop: offer the phone instead
       await loadQR();
@@ -137,6 +139,31 @@ function renderSongs(i) {
     li.querySelector('.song').textContent = `${s.title} – ${s.artist}, ${s.year}`;
     li.querySelectorAll('a').forEach((a) => a.setAttribute('aria-label', `Listen to ${s.title} by ${s.artist} on ${a.textContent}`));
     ul.appendChild(li);
+  }
+}
+
+// labels pinned to the 3D model (meters, model space)
+const HOTSPOTS = {
+  'tr-808': [['keys', '0.06m 0.075m 0.12m', '16 step keys'], ['tempo', '-0.285m 0.125m -0.1m', 'Tempo'], ['voices', '0.07m 0.11m -0.07m', '11 voices']],
+};
+
+// the 3D 808 follows the sequencer: LEDs show the selected sound's pattern, the playhead lights its key
+let leds = null;
+let head = -1;
+function bindModel(mv) {
+  leds = null;
+  const mats = mv.model?.materials || [];
+  const find = (n) => mats.find((m) => m.name === n);
+  if (!find('led-0')) return;
+  leds = { led: Array.from({ length: 16 }, (_, s) => find(`led-${s}`)), key: Array.from({ length: 16 }, (_, s) => find(`key-${s}`)) };
+  paintModel();
+}
+function paintModel() {
+  if (!leds || !drum) return;
+  for (let s = 0; s < 16; s++) {
+    const on = drum.steps[row][s];
+    leds.led[s]?.setEmissiveFactor(s === head ? [1, 0.25, 0.1] : on ? [0.85, 0.08, 0.03] : [0, 0, 0]);
+    leds.key[s]?.setEmissiveFactor(s === head ? [0.7, 0.7, 0.7] : [0, 0, 0]);
   }
 }
 
@@ -202,6 +229,7 @@ function setupSeq() {
   $('#tempo').addEventListener('input', (e) => { drum.bpm = +e.target.value; $('#bpm').textContent = drum.bpm; });
   drum.onStep = (s) => {
     document.querySelectorAll('.pad.now, .cell.now').forEach((x) => x.classList.remove('now'));
+    head = s; paintModel();
     if (s < 0) return;
     $(`.pad[data-step="${s}"]`).classList.add('now');
     document.querySelectorAll(`.cell[data-step="${s}"]`).forEach((x) => x.classList.add('now'));
@@ -209,6 +237,7 @@ function setupSeq() {
   syncAll();
 }
 function syncAll() {
+  paintModel();
   $('#tempo').value = drum.bpm; $('#bpm').textContent = drum.bpm;
   $('#rows').querySelectorAll('.row').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.row === row)));
   const name = ROWS.find((r) => r.id === row).name;
@@ -234,5 +263,5 @@ if (deep && byId[deep]) {
   history.replaceState({ card: null }, '', location.href);
   openCard(deep, false);
 }
-window.__heritage = { store, stations: stations.map((s) => s.id), get drum() { return drum; } };
+window.__heritage = { get leds() { return leds; }, store, stations: stations.map((s) => s.id), get drum() { return drum; } };
 document.documentElement.classList.add('ready');
