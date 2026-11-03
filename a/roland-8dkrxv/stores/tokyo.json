@@ -1,0 +1,11 @@
+{
+  "id": "tokyo",
+  "name": "Roland Store Tokyo",
+  "address": "4-25-37 Jingumae · Shibuya-ku, Tokyo",
+  "lineName": "Heritage Line",
+  "lineColor": "#3FA34D",
+  "featured": "jupiter-8",
+  "featuredNote": "Synth wall",
+  "appleMusicCountry": "jp",
+  "stations": ["tr-808", "jupiter-8", "tb-303", "sh-101", "tr-909", "juno-106", "d-50"]
+}

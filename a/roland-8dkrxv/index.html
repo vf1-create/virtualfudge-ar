@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>Roland Heritage Map: phase two demo</title>
+  <meta name="description" content="Tap a year on the Heritage Line and that year's instrument lifts off the wall in AR. A phase two demo by Virtual Fudge.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Roland Heritage Map: phase two demo">
+  <meta property="og:description" content="Tap a year and that instrument lifts off the wall in AR. Play the 808. Built to switch between New York, London and Tokyo.">
+  <meta property="og:image" content="https://vf1-create.github.io/virtualfudge-ar/a/roland-8dkrxv/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="627">
+  <meta property="og:image:alt" content="A subway-style timeline of instruments with the TR-808 card open">
+  <meta property="og:url" content="https://vf1-create.github.io/virtualfudge-ar/a/roland-8dkrxv/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#111111">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23E8402F'/%3E%3Ctext x='32' y='41' font-family='Arial' font-weight='700' font-size='22' text-anchor='middle' fill='white'%3E808%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="modulepreload" href="js/app.js">
+</head>
+<body>
+  <header class="sign">
+    <div class="sign-in">
+      <p class="sign-line"><span class="dot" aria-hidden="true"></span><span id="lineName">Heritage Line</span></p>
+      <h1 id="storeName">Roland Store</h1>
+      <p class="sign-addr" id="storeAddr"></p>
+    </div>
+  </header>
+
+  <main id="map" class="map">
+    <p class="lede">Tap a year. That instrument lifts off the wall and into the room.</p>
+    <ol class="line" id="line" aria-label="Heritage Line stations"></ol>
+    <p class="note">Every sound in this demo is synthesized live in your browser. Songs are listed as text, with links that open your own streaming app.</p>
+  </main>
+
+  <section id="card" class="card" role="dialog" aria-modal="true" aria-labelledby="cardTitle" hidden>
+    <div class="card-bar">
+      <button class="back" id="back" type="button" aria-label="Back to the map">← Map</button>
+      <span class="bullet" id="cardBullet" aria-hidden="true"></span>
+      <h2 id="cardTitle"></h2>
+      <span class="card-year" id="cardYear"></span>
+    </div>
+    <div class="card-body">
+      <div class="stage">
+        <div class="viewer" id="viewer"></div>
+        <div class="ar-row">
+          <p class="kind" id="cardKind"></p>
+          <div class="qr" id="qr" hidden>
+            <div class="qr-code" id="qrCode"></div>
+            <p><strong>See it in AR on your phone.</strong> Scan this code, then tap “See it in AR”.</p>
+          </div>
+        </div>
+      </div>
+      <div class="info">
+        <section class="seq" id="seq" hidden aria-labelledby="playTitle">
+          <h3 id="playTitle">Play the 808</h3>
+          <p class="fine" id="seqHint">Tap a pad to add a hit. Sound starts on your first tap.</p>
+          <div class="seq-top">
+            <button type="button" class="play" id="play" aria-pressed="false">▶ Play</button>
+            <label class="tempo">Tempo <input type="range" id="tempo" min="70" max="150" value="108"> <output id="bpm">108</output> BPM</label>
+          </div>
+          <div class="presets" id="presets" role="group" aria-label="Preset patterns"></div>
+          <div class="rows" id="rows" role="group" aria-label="Choose a sound"></div>
+          <div class="pads" id="pads" role="group" aria-label="16 steps"></div>
+          <div class="grid" id="grid" aria-hidden="true"></div>
+        </section>
+        <section class="songs" aria-labelledby="madeWith">
+          <h3 id="madeWith">Made with it</h3>
+          <ul id="songs"></ul>
+          <p class="fine">Song titles and artists are text only. The links search your own streaming app.</p>
+        </section>
+      </div>
+    </div>
+    <footer class="foot">Phase two demo by Virtual Fudge for Roland · <a href="https://calendar.app.google/aTmHkh5B71PkiYVe7?src=roland" target="_blank" rel="noopener">Book 20 minutes</a></footer>
+  </section>
+
+  <footer class="foot" id="mainFoot">Phase two demo by Virtual Fudge for Roland · <a href="https://calendar.app.google/aTmHkh5B71PkiYVe7?src=roland" target="_blank" rel="noopener">Book 20 minutes</a></footer>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "id": "nyc",
+  "name": "Roland Store New York City",
+  "address": "414 West 14th Street · Meatpacking District, New York",
+  "lineName": "Heritage Line",
+  "lineColor": "#E8402F",
+  "featured": "tr-808",
+  "featuredNote": "The 808 room",
+  "appleMusicCountry": "us",
+  "stations": ["tr-808", "jupiter-8", "tb-303", "sh-101", "tr-909", "juno-106", "d-50"]
+}

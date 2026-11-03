@@ -1,0 +1,11 @@
+{
+  "id": "london",
+  "name": "Roland Store London",
+  "address": "10 Denmark Street · Soho, London WC2H 8LS",
+  "lineName": "Heritage Line",
+  "lineColor": "#2D6CDF",
+  "featured": "tb-303",
+  "featuredNote": "Acid house corner",
+  "appleMusicCountry": "gb",
+  "stations": ["tr-808", "tb-303", "sh-101", "tr-909", "juno-106"]
+}

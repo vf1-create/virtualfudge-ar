@@ -1,0 +1,39 @@
+{
+  "_note": "Every year and song here is backed by a source in SOURCES.md. Song info is text only; links are searches that open the visitor's own streaming app.",
+  "instruments": [
+    { "id": "tr-808", "model": "TR-808", "year": 1980, "bullet": "808", "color": "#E8402F", "kind": "Rhythm Composer · analog drum machine", "playable": true,
+      "songs": [
+        { "title": "Sexual Healing", "artist": "Marvin Gaye", "year": 1982 },
+        { "title": "Planet Rock", "artist": "Afrika Bambaataa & the Soulsonic Force", "year": 1982 },
+        { "title": "Love Lockdown", "artist": "Kanye West", "year": 2008 } ] },
+    { "id": "jupiter-8", "model": "Jupiter-8", "year": 1981, "bullet": "J8", "color": "#2D6CDF", "kind": "8-voice polyphonic analog synthesizer",
+      "songs": [
+        { "title": "Separate Ways (Worlds Apart)", "artist": "Journey", "year": 1983 },
+        { "title": "Relax", "artist": "Frankie Goes to Hollywood", "year": 1983 } ] },
+    { "id": "tb-303", "model": "TB-303", "year": 1981, "bullet": "303", "color": "#8A9196", "kind": "Bass Line · analog bass synthesizer",
+      "songs": [
+        { "title": "Acid Tracks", "artist": "Phuture", "year": 1987 },
+        { "title": "Acperience 1", "artist": "Hardfloor", "year": 1992 },
+        { "title": "Higher State of Consciousness", "artist": "Josh Wink", "year": 1995 } ] },
+    { "id": "sh-101", "model": "SH-101", "year": 1982, "bullet": "101", "color": "#3FA34D", "kind": "Monophonic analog synthesizer",
+      "songs": [
+        { "title": "Sweet Dreams (Are Made of This)", "artist": "Eurythmics", "year": 1983 },
+        { "title": "The Promise", "artist": "When in Rome", "year": 1987 },
+        { "title": "Voodoo Ray", "artist": "A Guy Called Gerald", "year": 1988 } ] },
+    { "id": "tr-909", "model": "TR-909", "year": 1983, "bullet": "909", "color": "#F07A1F", "kind": "Rhythm Composer · analog and sampled drums",
+      "songs": [
+        { "title": "Strings of Life", "artist": "Rhythim Is Rhythim", "year": 1987 },
+        { "title": "Pump Up the Jam", "artist": "Technotronic", "year": 1989 },
+        { "title": "Vogue", "artist": "Madonna", "year": 1990 } ] },
+    { "id": "juno-106", "model": "Juno-106", "year": 1984, "bullet": "106", "color": "#7A4FD1", "kind": "6-voice polyphonic synthesizer",
+      "songs": [
+        { "title": "I Want Your Sex", "artist": "George Michael", "year": 1987 },
+        { "title": "Promised Land", "artist": "Joe Smooth", "year": 1987 },
+        { "title": "Elsewhere", "artist": "Vangelis", "year": 1988 } ] },
+    { "id": "d-50", "model": "D-50", "year": 1987, "bullet": "D50", "color": "#1F9EA8", "kind": "Digital synthesizer · Linear Arithmetic synthesis",
+      "songs": [
+        { "title": "A Hazy Shade of Winter", "artist": "The Bangles", "year": 1987 },
+        { "title": "Orinoco Flow", "artist": "Enya", "year": 1988 },
+        { "title": "Man in the Mirror", "artist": "Michael Jackson", "year": 1988 } ] }
+  ]
+}
