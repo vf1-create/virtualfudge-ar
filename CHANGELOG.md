@@ -2,6 +2,15 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Tue Nov 3
+- Follow-up review of everything changed since the October audit found six real bugs; all fixed:
+  - Pressing the shutter, Space or the self-timer during a video recording now stops the recording instead of photographing over it and corrupting the clip (the worst of the six).
+  - Closing the camera while a failing camera switch was in flight could silently reopen the camera behind the start screen; it stays off now.
+  - Switching cameras cancels a running self-timer instead of letting it fire into the gap and drop the shot silently.
+  - The active filter chip is highlighted again (lost in the accessibility rework; styling and markup disagreed).
+  - Promo kit: a link typed with a port, like ar.yourbrand.com:8443, is treated as a link rather than rejected.
+  - Offline cache now stores the face-tracking engine variant the device actually uses (older devices got the wrong one).
+
 ## Mon Nov 2
 - Removed a leftover italic font file nothing used since the Oct 20 restyle; one less file to download and audit.
 

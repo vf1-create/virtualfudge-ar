@@ -128,6 +128,7 @@ let flipping = false;
 $('#flipBtn').addEventListener('click', async () => {
   if (flipping || !state.stream) return;
   flipping = true; $('#flipBtn').disabled = true;
+  if (countTimer) cancelCountdown(); // don't let a countdown fire into the mid-switch gap
   const prev = { facing: state.facing, deviceId: state.deviceId };
   try {
     const settings = state.stream.getVideoTracks()[0]?.getSettings?.() || {};
@@ -143,6 +144,7 @@ $('#flipBtn').addEventListener('click', async () => {
   } catch (e) {
     if (e?.name === 'AbortError') return;
     console.warn(e);
+    if (!$('#ar').classList.contains('active')) return; // the camera was closed while the switch was in flight
     state.facing = prev.facing; // go back to the camera that worked
     try { await startCamera(prev.deviceId); resume(); toast('Couldn’t switch cameras.', 2600); }
     catch (e2) { if (e2?.name !== 'AbortError') { stopCamera(); show('intro'); cameraError(e2); } }
@@ -537,6 +539,7 @@ $('#timerBtn').addEventListener('click', () => {
 
 let countTimer = null;
 function capturePhoto() {
+  if (state.recorder) { stopRecording(); return; } // a capture gesture during a recording ends the recording
   if (countTimer) { cancelCountdown(); return; } // tap again to cancel
   if (!state.timer) { takePhoto(); return; }
   let n = state.timer;
@@ -568,7 +571,7 @@ document.addEventListener('keydown', (e) => {
     // a control the user reached with the keyboard keeps its own Space/Enter (mouse-focused ones don't)
     if (btn && btn !== shutter && btn.matches(':focus-visible') && (e.key === ' ' || e.key === 'Enter')) return;
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (!e.repeat && cameraLive()) capturePhoto(); }
-    else if (e.key === 'v' || e.key === 'V') { if (!e.repeat && cameraLive()) (state.recorder ? stopRecording() : startRecording()); }
+    else if (e.key === 'v' || e.key === 'V') { if (!e.repeat && cameraLive() && !countTimer) (state.recorder ? stopRecording() : startRecording()); }
     else if (e.key === 'ArrowRight') setFilter(state.filter + 1);
     else if (e.key === 'ArrowLeft') setFilter(state.filter - 1);
     else if (e.key === 'Escape') $('#closeBtn').click();
@@ -608,6 +611,7 @@ shutter.addEventListener('contextmenu', (e) => e.preventDefault());
 shutter.addEventListener('click', (e) => { if (e.detail === 0 && cameraLive()) capturePhoto(); });
 
 function takePhoto() {
+  if (state.recorder) { stopRecording(); return; } // never photograph over a live recording (V key, timer races)
   if (!cameraLive()) return;
   navigator.vibrate?.(12);
   const f = $('#flash');

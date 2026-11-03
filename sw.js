@@ -6,10 +6,12 @@
 const CACHE = 'vf-engine-v2';
 const ENGINE = /\/vendor\/(mediapipe|models|fonts)\//;
 // fetched on install so even the first visit leaves a complete cache behind
+const SIMD = WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
 const PRECACHE = [
   'vendor/mediapipe/vision_bundle.mjs',
-  'vendor/mediapipe/wasm/vision_wasm_internal.js',
-  'vendor/mediapipe/wasm/vision_wasm_internal.wasm',
+  // MediaPipe loads the pair matching this device's WebAssembly SIMD support; cache that pair, not the other
+  `vendor/mediapipe/wasm/vision_wasm${SIMD ? '' : '_nosimd'}_internal.js`,
+  `vendor/mediapipe/wasm/vision_wasm${SIMD ? '' : '_nosimd'}_internal.wasm`,
   'vendor/models/face_landmarker.task',
   'vendor/fonts/fonts.css',
   'vendor/fonts/Syncopate-400.woff2',

@@ -123,7 +123,7 @@
   const LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/;
   function parseUrl() {
     let raw = $('#url').value.trim() || defaultUrl;
-    if (!/^[a-z][a-z0-9+.-]*:/i.test(raw)) raw = 'https://' + raw;
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) raw = 'https://' + raw; // 'host:8443' is a port, not a scheme
     try {
       const u = new URL(raw);
       if (u.protocol === 'https:' || (u.protocol === 'http:' && LOCAL.test(u.hostname))) return u;

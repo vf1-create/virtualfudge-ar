@@ -131,7 +131,7 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
 .filters::-webkit-scrollbar { display: none; }
 .filters button:focus-visible { outline-offset: -4px; } /* inside the chip, so the scrolling strip can't clip it */
 .filters button { flex: none; scroll-snap-align: center; padding: 7px 10px; border-radius: 2px; background: rgba(243, 243, 243, .88); box-shadow: inset 0 0 0 1px var(--line), 0 2px 10px rgba(20, 8, 2, .12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 11px; font-weight: 500; letter-spacing: .01em; white-space: nowrap; color: var(--ink); transition: background-color .2s, color .2s; }
-.filters button[aria-selected="true"] { background: var(--ink); color: var(--paper); box-shadow: 0 2px 10px rgba(20, 8, 2, .2); }
+.filters button[aria-checked="true"] { background: var(--ink); color: var(--paper); box-shadow: 0 2px 10px rgba(20, 8, 2, .2); }
 
 .bottombar { position: absolute; left: 0; right: 0; bottom: max(12px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; z-index: 2; }
 #ar.tight .shutter-tip { display: none; }
@@ -140,7 +140,7 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
 #ar.side .filters { left: var(--rail-left); right: auto; top: 50%; width: 180px; transform: translateY(calc(-50% - 50px)); flex-direction: column; overflow: visible; padding: 0; -webkit-mask-image: none; mask-image: none; }
 #ar.side .filters > * { margin: 0; text-align: left; }
 #ar.side .filters button { box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: none; -webkit-backdrop-filter: none; padding: 10px 14px; font-size: 12.5px; }
-#ar.side .filters button[aria-selected="true"] { box-shadow: none; }
+#ar.side .filters button[aria-checked="true"] { box-shadow: none; }
 #ar.side .bottombar { left: var(--rail-left); right: auto; width: 180px; top: calc(50% + 70px); bottom: auto; align-items: flex-start; }
 #ar.side .shutter-tip { text-align: left; }
 #ar.side .hint { left: var(--rail-left); top: auto; bottom: calc(100% - var(--rail-top, 30%) + 12px); transform: none; width: 180px; white-space: normal; line-height: 1.5; animation-name: rise-side; }

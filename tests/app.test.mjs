@@ -86,6 +86,15 @@ export default async function (check) {
       const r4 = await p.evaluate(() => { const bs = [...document.querySelectorAll('#filters button')];
         return { checked: bs.findIndex((x) => x.getAttribute('aria-checked') === 'true'), focused: bs.indexOf(document.activeElement), tabStops: bs.filter((x) => x.tabIndex === 0).length, role: document.querySelector('#filters').getAttribute('role') }; });
       check('filters: arrows move selection and focus together, one tab stop', r4.checked === r4.focused && r4.tabStops === 1 && r4.role === 'radiogroup', JSON.stringify(r4));
+      await p.waitForTimeout(400); // let the chip's background transition settle before reading its color
+      const hl = await p.evaluate(() => { const bs = [...document.querySelectorAll('#filters button')];
+        return { on: getComputedStyle(bs.find((x) => x.getAttribute('aria-checked') === 'true')).backgroundColor, off: getComputedStyle(bs.find((x) => x.getAttribute('aria-checked') !== 'true')).backgroundColor }; });
+      check('the active filter chip is visibly highlighted', hl.on !== hl.off, JSON.stringify(hl));
+      // V during a recording stops it instead of photographing over it; Space does too
+      await p.keyboard.press('v'); await p.waitForTimeout(2500); await p.keyboard.press('Space'); await waitScreen(p, 'result', 12000); await p.waitForTimeout(400);
+      // the fix: a capture key during a recording must never produce a photo (it stops the recording instead)
+      check('Space during a V recording never takes a photo over it', (await result(p)).kind !== 'photo', JSON.stringify(await result(p)));
+      await ((await screen(p)) === 'result' ? p.keyboard.press('Escape') : Promise.resolve()); await waitScreen(p, 'ar'); await p.waitForTimeout(400);
 
       await p.evaluate(() => document.activeElement.blur());
       for (const hold of [3000, 6000, 8000]) {
@@ -115,9 +124,12 @@ export default async function (check) {
       const p = await page(b, PHONE);
       await open(p); await p.click('#startBtn', { force: true }); await ready(p); await p.waitForTimeout(2000);
       await p.evaluate(() => { window.__ar.lastFrame -= 5000; }); // what a 5 s background gap looks like to the render loop
-      await p.waitForTimeout(6000);
+      // the outlier guard resets the quality window on that huge frame, so the gap can't force a drop; a real
+      // slow-device drop needs a full 3 s measurement window, which can't complete in this short wait — so a
+      // 720 here means the guard failed, not that this (often loaded) test machine is genuinely slow.
+      await p.waitForTimeout(800);
       const w = await p.evaluate(() => document.querySelector('#stage').width);
-      check('a 5 s pause keeps 1080p output', w === 1080, `canvas width ${w}`);
+      check('a background gap does not drop output to 720p', w === 1080, `canvas width ${w}`);
       await p.context().close();
     }
     // Self-timer: digits, cancel, reduced motion
