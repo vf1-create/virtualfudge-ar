@@ -187,6 +187,7 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
 .result-actions .btn { justify-content: center; }
 .result-actions .primary { grid-column: 1 / -1; order: -1; } /* the main action spans the row; the two secondary ones sit below */
 .tag-line { position: relative; z-index: 2; margin: -4px 0 -8px; font-size: 12px; color: var(--muted); }
+.caption-text { color: var(--ink); -webkit-user-select: all; user-select: all; } /* one long press selects the whole caption */
 .cta { position: relative; z-index: 2; color: var(--brand); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; padding: 4px 8px; }
 
 .noscript { position: fixed; left: 0; right: 0; bottom: 0; margin: 0; padding: 14px 16px; background: var(--ink); color: var(--paper); font-size: 13px; text-align: center; z-index: 20; }

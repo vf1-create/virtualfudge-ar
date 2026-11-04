@@ -86,7 +86,10 @@ export default async function (check) {
       const r4 = await p.evaluate(() => { const bs = [...document.querySelectorAll('#filters button')];
         return { checked: bs.findIndex((x) => x.getAttribute('aria-checked') === 'true'), focused: bs.indexOf(document.activeElement), tabStops: bs.filter((x) => x.tabIndex === 0).length, role: document.querySelector('#filters').getAttribute('role') }; });
       check('filters: arrows move selection and focus together, one tab stop', r4.checked === r4.focused && r4.tabStops === 1 && r4.role === 'radiogroup', JSON.stringify(r4));
-      await p.waitForTimeout(400); // let the chip's background transition settle before reading its color
+      // wait for the chip's background fade to finish (up to 5 s on a slow test machine) instead of guessing a delay
+      await p.waitForFunction(() => { const bs = [...document.querySelectorAll('#filters button')];
+        const on = bs.find((x) => x.getAttribute('aria-checked') === 'true'), off = bs.find((x) => x.getAttribute('aria-checked') !== 'true');
+        return on && off && getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor; }, null, { timeout: 5000, polling: 100 }).catch(() => {});
       const hl = await p.evaluate(() => { const bs = [...document.querySelectorAll('#filters button')];
         return { on: getComputedStyle(bs.find((x) => x.getAttribute('aria-checked') === 'true')).backgroundColor, off: getComputedStyle(bs.find((x) => x.getAttribute('aria-checked') !== 'true')).backgroundColor }; });
       check('the active filter chip is visibly highlighted', hl.on !== hl.off, JSON.stringify(hl));
@@ -110,13 +113,26 @@ export default async function (check) {
     {
       const p = await page(b, LAPTOP);
       await p.addInitScript(() => { const orig = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
-        navigator.mediaDevices.getUserMedia = (c) => new Promise((r) => setTimeout(r, 3000)).then(() => orig(c)); });
+        navigator.mediaDevices.getUserMedia = (c) => new Promise((r) => setTimeout(r, 6000)).then(() => orig(c)); });
       await open(p); await p.click('#startBtn', { force: true }); await p.waitForTimeout(500);
       await p.keyboard.press('Enter'); await p.waitForTimeout(300);
       check('Enter while "Warming up" takes no black photo', (await screen(p)) === 'ar' && !(await p.evaluate(() => !!window.__ar.blob)));
-      await p.keyboard.press('Escape'); await p.waitForTimeout(4000);
+      await p.keyboard.press('Escape'); await p.waitForTimeout(7000);
       const r = await p.evaluate(() => ({ screen: document.querySelector('.screen.active').id, running: window.__ar.running, stream: !!window.__ar.stream }));
       check('Esc while warming up leaves the camera off', r.screen === 'intro' && !r.running && !r.stream, JSON.stringify(r));
+      await p.context().close();
+    }
+    // Closing the camera while a photo is still encoding must not pop the result screen up afterwards
+    {
+      const p = await page(b, LAPTOP);
+      await p.addInitScript(() => { // a slow phone: the JPEG takes a while to encode
+        const tb = HTMLCanvasElement.prototype.toBlob;
+        HTMLCanvasElement.prototype.toBlob = function (cb, ...a) { return tb.call(this, (blob) => setTimeout(() => cb(blob), 1500), ...a); };
+      });
+      await open(p); await p.click('#startBtn', { force: true }); await ready(p);
+      await p.click('#shutter'); await p.waitForTimeout(150);
+      await p.click('#closeBtn'); await p.waitForTimeout(2500);
+      check('closing the camera mid-save drops the photo instead of popping up the result', (await screen(p)) === 'intro', await screen(p));
       await p.context().close();
     }
     // Quality: a hidden-tab gap doesn't drop to 720p
@@ -234,6 +250,39 @@ export default async function (check) {
       await p.click('#startBtn', { force: true });
       const recovered = await ready(p).then(() => true, () => false);
       check('a failed engine download is retried when the camera reopens', failedFirst && recovered, JSON.stringify({ failedFirst, recovered }));
+      await p.context().close();
+    }
+    // Result screen: copy works where the async clipboard is blocked; a double tap saves once
+    {
+      const p = await page(b, LAPTOP);
+      await open(p); await p.click('#startBtn', { force: true }); await ready(p);
+      await p.click('#shutter'); await waitScreen(p, 'result'); await p.waitForTimeout(300);
+      // an in-app browser that blocks the clipboard API but allows the older copy command
+      await p.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new DOMException('blocked', 'NotAllowedError')); document.execCommand = () => true; });
+      await p.click('#copyBtn'); await p.waitForTimeout(200);
+      check('copy falls back to the older copy command', /Caption copied/.test(await p.textContent('#toast')), await p.textContent('#toast'));
+      // both blocked: the caption is shown where a long press can select it
+      await p.evaluate(() => { document.execCommand = () => false; });
+      await p.click('#copyBtn'); await p.waitForTimeout(200);
+      const cap = await p.evaluate(() => { const el = document.querySelector('#captionText'); return { shown: !el.hidden, text: el.textContent, select: getComputedStyle(el).userSelect }; });
+      check('with no clipboard at all, the caption is shown and selectable', cap.shown && cap.text.includes('#VirtualFudge') && cap.select === 'all', JSON.stringify(cap));
+      // double tap on Download
+      await p.evaluate(() => { window.__saves = 0; const c = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () { if (this.download) { window.__saves++; return; } return c.call(this); }; });
+      await p.dblclick('#saveBtn'); await p.waitForTimeout(300);
+      check('a double tap on Download saves one copy', (await p.evaluate(() => window.__saves)) === 1, `${await p.evaluate(() => window.__saves)} saves`);
+      check('result fallbacks: no page errors', !p.errs.length, p.errs.join(' | '));
+      await p.context().close();
+    }
+    // A browser too old to parse the app gets told so, instead of a dead start button
+    {
+      const p = await page(b, PHONE);
+      await p.addInitScript(() => { // pretend optional chaining doesn't parse, like iOS 12 Safari
+        const F = window.Function;
+        window.Function = function (...a) { if (a.join(' ').includes('?.')) throw new SyntaxError('Unexpected token'); return F(...a); };
+      });
+      await p.goto(BASE); await p.waitForTimeout(800);
+      const r = await p.evaluate(() => ({ startHidden: document.querySelector('#startBtn').hidden, msg: document.querySelector('#camError').hidden ? '' : document.querySelector('#camError').textContent }));
+      check('a too-old browser sees an update message, not a dead button', r.startHidden && /too old/.test(r.msg), JSON.stringify(r));
       await p.context().close();
     }
   } finally { await b.close(); }

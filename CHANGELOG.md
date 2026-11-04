@@ -8,6 +8,11 @@ What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virt
   - In Firefox, a webcam already in use by another app (Teams, Zoom) left visitors stuck on "Warming up the camera" with no way out. They now get the "camera is busy, close other apps" message.
   - Booth tablets could lose their keep-awake lock after a guest shared to another app, then dim and lock between guests. The lock now comes back.
   - If the face-tracking download failed (patchy venue Wi-Fi), tracking stayed off until a page reload and the message blamed the device. Reopening the camera now retries the download, and the message points to the connection.
+- Polish from the same review, plus one race found while testing:
+  - Copy caption now works in in-app browsers that block the clipboard (older copy method), and as a last resort shows the caption where a long press selects it.
+  - A double tap on Download saves one copy, not two.
+  - Phones too old to run the app (like iOS 12) get an "update your browser" message instead of a dead start button.
+  - Closing the camera while a photo is still being saved no longer pops the result screen up over the start screen.
 
 ## Tue Nov 3
 - Follow-up review of everything changed since the October audit found six real bugs; all fixed:

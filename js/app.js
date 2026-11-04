@@ -619,7 +619,11 @@ function takePhoto() {
   navigator.vibrate?.(12);
   const f = $('#flash');
   f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
-  canvas.toBlob((blob) => { track('photo'); showResult(blob, 'photo'); }, 'image/jpeg', 0.92);
+  const gen = camGen; // encoding a full-size JPEG takes a moment; if the camera is closed meanwhile, drop the shot
+  canvas.toBlob((blob) => {
+    if (gen !== camGen || !$('#ar').classList.contains('active')) return;
+    track('photo'); showResult(blob, 'photo');
+  }, 'image/jpeg', 0.92);
 }
 
 function pickVideoType() {
@@ -714,6 +718,7 @@ function showResult(blob, kind, seconds) {
   const noSave = IN_APP && !canShareFiles;
   $('#saveBtn').hidden = noSave;
   $('#saveHint').hidden = !noSave;
+  $('#captionText').hidden = true; // a caption shown for the last result doesn't carry over
   $('#saveHint').textContent = kind === 'photo'
     ? 'To save: press and hold the photo, or open this page in your browser (••• › Open in browser).'
     : 'To save the video, open this page in your browser (••• › Open in browser).';
@@ -736,9 +741,25 @@ if (!canShareFiles) {
   $('#copyBtn').hidden = false;
   $('.result-actions').prepend($('#saveBtn')); // the main action comes first in tab order too
 }
+// some in-app browsers block the async clipboard but still allow the older copy command
+function copyFallback(text) {
+  const ta = Object.assign(document.createElement('textarea'), { value: text, readOnly: true });
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+  document.body.append(ta); ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch {}
+  ta.remove(); $('#copyBtn').focus({ preventScroll: true });
+  return ok;
+}
 $('#copyBtn').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(caption()); toast('Caption copied. Paste it into your post.'); }
-  catch { toast(caption(), 6000); }
+  const text = caption();
+  let ok;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch { ok = copyFallback(text); }
+  if (ok) toast('Caption copied. Paste it into your post.');
+  else { // last resort: show it where a long press can select it
+    const el = $('#captionText'); el.textContent = text; el.hidden = false;
+    toast('Press and hold the caption below to copy it.', 4000);
+  }
   track('copy');
 });
 
@@ -759,7 +780,10 @@ async function shareFiles(data) {
   finally { sharing = false; }
 }
 
+let saving = false; // a double tap shouldn't save two copies
 $('#saveBtn').addEventListener('click', async () => {
+  if (saving) return;
+  saving = true; setTimeout(() => { saving = false; }, 1500);
   const file = fileFor(state.blob);
   track('save', { kind: state.kind });
   // iPhone: a downloaded file lands in Files, not Photos. The share sheet has Save Image / Save Video.

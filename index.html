@@ -101,6 +101,7 @@
       <button id="copyBtn" class="btn ghost" hidden>Copy caption</button>
     </div>
     <p id="saveHint" class="tag-line" hidden></p>
+    <p id="captionText" class="tag-line caption-text" hidden></p>
     <p id="tagLine" class="tag-line"></p>
     <a id="cta" class="cta" target="_blank" rel="noopener" hidden></a>
   </section>
@@ -108,6 +109,15 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <noscript><p class="noscript">Turn on JavaScript to use the Virtual Fudge AR camera.</p></noscript>
 
+  <script>
+    // Browsers too old to run the app (e.g. iOS 12 Safari) can't parse js/app.js and would show a dead start button
+    try { new Function('var a; a?.b; a ?? 1'); } catch (e) {
+      document.getElementById('startBtn').hidden = true;
+      var err = document.getElementById('camError');
+      err.textContent = 'This browser is too old for the AR camera. Update your phone\u2019s software, or open this link in Chrome.';
+      err.hidden = false;
+    }
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
