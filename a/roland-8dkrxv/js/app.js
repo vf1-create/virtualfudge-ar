@@ -27,6 +27,14 @@ document.documentElement.dataset.store = store.id;
 $('#storeName').textContent = store.name;
 $('#storeAddr').textContent = store.address;
 $('#lineName').textContent = store.lineName;
+// the same build for every flagship: one tap to show it
+const STORE_LABELS = { nyc: 'New York', london: 'London', tokyo: 'Tokyo' };
+for (const id of STORES) {
+  const a = document.createElement('a');
+  a.href = `?store=${id}`; a.textContent = STORE_LABELS[id];
+  if (id === store.id) a.setAttribute('aria-current', 'page');
+  $('#stores').appendChild(a);
+}
 
 // ── the line ──
 const bullet = (el, i) => { el.textContent = i.bullet; el.style.setProperty('--c', i.color); };
@@ -51,7 +59,7 @@ line.addEventListener('click', (e) => {
 
 // ── model-viewer loads only when it's needed (keeps the map fast) ──
 let mvReady = null;
-const loadViewer = () => (mvReady ||= import('../vendor/model-viewer.min.js'));
+const loadViewer = () => (mvReady ||= import('../vendor/model-viewer.min.js').catch((e) => { mvReady = null; throw e; }));
 const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1200));
 const prefetch = () => idle(() => loadViewer());
 if (document.readyState === 'complete') prefetch(); else addEventListener('load', prefetch);
@@ -86,14 +94,16 @@ async function openCard(id, push) {
   card.hidden = false;
   document.body.classList.add('card-open');
   card.scrollTop = 0;
-  $('#back').focus({ preventScroll: true });
+  card.focus({ preventScroll: true });
 
   const viewer = $('#viewer');
-  viewer.innerHTML = '';
-  viewer.classList.remove('lifted');
+  viewer.querySelector('model-viewer')?.remove();
+  viewer.classList.remove('lifted', 'loaded', 'failed');
+  const status = $('#viewerStatus');
+  status.textContent = 'Loading 3D…';
   const mv = document.createElement('model-viewer');
   Object.entries({
-    src: `models/${i.id}.glb`, 'ios-src': `models/${i.id}.usdz`, alt: `A 3D model of the ${i.model}, built for this demo`,
+    src: `models/${i.id}.glb`, poster: `models/posters/${i.id}.png`, 'ios-src': `models/${i.id}.usdz`, alt: `A 3D model of the ${i.model}, built for this demo`,
     ar: '', 'ar-modes': 'webxr scene-viewer quick-look', 'ar-scale': 'fixed', 'camera-controls': '', 'touch-action': 'pan-y',
     'shadow-intensity': '1.1', 'shadow-softness': '0.7', exposure: '1.1', 'environment-image': 'neutral', 'camera-orbit': '0deg 62deg auto', 'interaction-prompt': 'none',
     'auto-rotate': '', 'auto-rotate-delay': '2500', 'rotation-per-second': '12deg', loading: 'eager',
@@ -102,8 +112,16 @@ async function openCard(id, push) {
     `<button slot="hotspot-${n}" class="hot" type="button" data-position="${pos}" data-normal="0m 1m 0m" tabindex="-1"><span>${text}</span></button>`).join('');
   viewer.appendChild(mv);
   requestAnimationFrame(() => requestAnimationFrame(() => viewer.classList.add('lifted')));
+  mv.addEventListener('error', () => {
+    if (current !== i || !mv.isConnected) return;
+    // no WebGL or a failed download: keep the picture, say so plainly
+    viewer.classList.add('failed');
+    status.textContent = '3D isn’t available on this device right now. The picture shows the instrument.';
+  });
   mv.addEventListener('load', async () => {
     if (current !== i || !mv.isConnected) return; // a card closed or reopened before this model finished
+    viewer.classList.add('loaded');
+    status.textContent = '';
     bindModel(mv);
     if (!mv.canActivateAR) {
       // desktop: offer the phone instead
@@ -116,14 +134,15 @@ async function openCard(id, push) {
       $('#qr').hidden = false;
     }
   }, { once: true });
-  await loadViewer();
+  // if the viewer itself can't load, the picture stays up and the page keeps working
+  await loadViewer().catch(() => { if (current === i) { viewer.classList.add('failed'); status.textContent = '3D isn’t available right now. The picture shows the instrument.'; } });
 }
 function closeCard() {
   card.hidden = true;
   document.body.classList.remove('card-open');
   drum?.stop();
   syncPlay();
-  $('#viewer').innerHTML = '';
+  $('#viewer model-viewer')?.remove();
   current = null;
   const b = lastFocus?.closest?.('.station') || document.querySelector(`.station`);
   b?.focus({ preventScroll: true });

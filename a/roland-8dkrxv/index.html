@@ -27,16 +27,24 @@
       <p class="sign-line"><span class="dot" aria-hidden="true"></span><span id="lineName">Heritage Line</span></p>
       <h1 id="storeName">Roland Store</h1>
       <p class="sign-addr" id="storeAddr"></p>
+      <nav class="stores" id="stores" aria-label="Switch store (one build, every flagship)"></nav>
     </div>
   </header>
 
   <main id="map" class="map">
     <p class="lede">Tap a year. That instrument lifts off the wall and into the room.</p>
     <ol class="line" id="line" aria-label="Heritage Line stations"></ol>
-    <p class="note">Every sound in this demo is synthesized live in your browser. Songs are listed as text, with links that open your own streaming app.</p>
+    <details class="about">
+      <summary>About this phase two demo</summary>
+      <div class="about-grid">
+        <div><h3>Lifts off the wall</h3><p>Each station opens its instrument in 3D, then “See it in AR” places it at full size in the room. No app: Quick Look on iPhone, Scene Viewer on Android.</p></div>
+        <div><h3>No licensing to clear</h3><p>Every sound is synthesized live in the browser. Songs are plain text, and the links open the visitor’s own Spotify, Apple Music or YouTube.</p></div>
+        <div><h3>One build, every flagship</h3><p>A small config file per store sets the name, address, line color and stations. New York, London and Tokyo run from the same code.</p></div>
+      </div>
+    </details>
   </main>
 
-  <section id="card" class="card" role="dialog" aria-modal="true" aria-labelledby="cardTitle" hidden>
+  <section id="card" class="card" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="cardTitle" hidden>
     <div class="card-bar">
       <button class="back" id="back" type="button" aria-label="Back to the map">← Map</button>
       <span class="bullet" id="cardBullet" aria-hidden="true"></span>
@@ -45,7 +53,7 @@
     </div>
     <div class="card-body">
       <div class="stage">
-        <div class="viewer" id="viewer"></div>
+        <div class="viewer" id="viewer"><p class="viewer-status" id="viewerStatus" role="status"></p></div>
         <div class="ar-row">
           <p class="kind" id="cardKind"></p>
           <div class="qr" id="qr" hidden>

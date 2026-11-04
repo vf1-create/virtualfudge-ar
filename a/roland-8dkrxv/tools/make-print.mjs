@@ -35,6 +35,21 @@ await page.waitForTimeout(500);
 const modelShot = await page.locator('#viewer').screenshot();
 const seqShot = await page.locator('#seq').screenshot();
 
+// posters: a still of each 3D model, shown instantly while the 3D loads (and kept if a device can't do 3D)
+fs.mkdirSync(path.join(ROOT, 'models/posters'), { recursive: true });
+const ids = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/instruments.json'), 'utf8')).instruments.map((i) => i.id);
+const pp = await browser.newPage({ viewport: { width: 1100, height: 760 } });
+for (const id of ids) {
+  await pp.goto(`${LOCAL}?i=${id}`);
+  await pp.waitForFunction(() => document.querySelector('model-viewer')?.loaded, null, { timeout: 30000 });
+  await pp.addStyleTag({ content: '.viewer{background:none!important;transform:none!important;opacity:1!important}.hot,.ar-btn,.viewer-status{display:none!important}' });
+  await pp.evaluate(() => { const mv = document.querySelector('model-viewer'); mv.autoRotate = false; mv.cameraOrbit = '0deg 62deg auto'; mv.jumpCameraToGoal(); });
+  await pp.waitForTimeout(600);
+  await pp.locator('model-viewer').screenshot({ path: path.join(ROOT, `models/posters/${id}.png`), omitBackground: true });
+  console.log('wrote', `models/posters/${id}.png`);
+}
+await pp.close();
+
 // QR as SVG, from the same MIT-licensed generator the demo uses
 const qrPage = await browser.newPage();
 await qrPage.addScriptTag({ path: path.join(ROOT, 'vendor/qrcode.js') });

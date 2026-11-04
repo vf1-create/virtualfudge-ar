@@ -59,9 +59,9 @@ const done = async (p) => { allErrs.push(...p.errs); allExternal.push(...p.exter
   const audio = files.filter((f) => /\.(mp3|wav|ogg|oga|m4a|aac|flac|aif|aiff|opus|mid|midi|webm|mp4)$/i.test(f));
   check('Build', 'No audio files in the build', audio.length === 0, audio.join(', '));
   const imgs = files.filter((f) => /\.(png|jpe?g|gif|webp|avif|svg|bmp|tiff?|heic)$/i.test(f));
-  const allowed = ['og.png', 'print/placement-mockup.png', 'print/qr-sign-808-4x6.png'];
+  const allowed = ['og.png', 'print/placement-mockup.png', 'print/qr-sign-808-4x6.png', ...ids.map((id) => `models/posters/${id}.png`)];
   const extra = imgs.filter((f) => !allowed.includes(f) && !f.startsWith('tests/out/'));
-  check('Build', 'Only generated images (og.png and the two print PNGs, all rendered by tools/make-print.mjs); no album art, photos or copied graphics', extra.length === 0, extra.join(', ') || imgs.filter((f) => !f.startsWith('tests/out/')).join(', '));
+  check('Build', 'Only generated images (og.png, the two print PNGs and a still of each of our own 3D models, all rendered by tools/make-print.mjs); no album art, photos or copied graphics', extra.length === 0, extra.join(', ') || imgs.filter((f) => !f.startsWith('tests/out/')).join(', '));
   const src = files.filter((f) => /\.(html|js|mjs|css|json)$/.test(f) && !f.startsWith('vendor/') && !f.startsWith('tests/'));
   const text = src.map((f) => fs.readFileSync(path.join(DEMO, f), 'utf8')).join('\n');
   check('Build', 'No <audio>, data:audio or sample loading in our code', !/<audio|data:audio|decodeAudioData|\.mp3|\.wav/i.test(text));
@@ -70,6 +70,8 @@ const done = async (p) => { allErrs.push(...p.errs); allExternal.push(...p.exter
   check('Build', 'No paid services, APIs, trackers or databases referenced in our code', !paid.test(text), (text.match(paid) || [''])[0]);
   for (const id of ids) {
     const g = fs.statSync(path.join(DEMO, `models/${id}.glb`)).size, u = fs.statSync(path.join(DEMO, `models/${id}.usdz`)).size;
+    const pst = path.join(DEMO, `models/posters/${id}.png`);
+    check('Models', `${id}: loading picture exists (${fs.existsSync(pst) ? (fs.statSync(pst).size / 1024).toFixed(0) : '–'} KB)`, fs.existsSync(pst) && fs.statSync(pst).size < 200e3);
     check('Models', `${id}.glb ${(g / 1024).toFixed(0)} KB and .usdz ${(u / 1024).toFixed(0)} KB, each under 3 MB`, g < 3e6 && u < 3e6);
   }
   const html = fs.readFileSync(path.join(DEMO, 'index.html'), 'utf8');
@@ -267,6 +269,27 @@ for (const [store, name, n] of [['nyc', 'Roland Store New York City', 7], ['lond
   await p.goto(BASE);
   const msg = await p.waitForSelector('.oops .retry', { timeout: 10000 }).then(() => true, () => false);
   check('Layout', 'If the map data fails to load, the visitor sees "try again" instead of an empty page', msg);
+  await ctx.close();
+}
+{
+  // the store switcher in the header
+  const p = await newPage({ viewport: { width: 1440, height: 900 } });
+  await p.goto(BASE);
+  await p.click('#stores a:has-text("Tokyo")');
+  await p.waitForFunction(() => document.querySelector('#storeName').textContent === 'Roland Store Tokyo');
+  check('Stores', 'The New York / London / Tokyo switcher in the header changes store in one tap', await p.evaluate(() => document.querySelector('#stores [aria-current]').textContent === 'Tokyo'));
+  await done(p);
+}
+{
+  // if a 3D file fails, the instrument's picture stays and the visitor gets a plain message (not a blank box)
+  const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true });
+  const p = await ctx.newPage();
+  await p.route('**/models/tr-909.glb', (r) => r.abort());
+  await p.goto(`${BASE}?i=tr-909`);
+  const ok = await p.waitForFunction(() => document.querySelector('#viewer').classList.contains('failed') && document.querySelector('#viewerStatus').textContent.includes('picture'), null, { timeout: 20000 }).then(() => true, () => false);
+  const poster = await p.evaluate(() => document.querySelector('model-viewer').getAttribute('poster'));
+  check('Cards', 'If a 3D file fails to download, the picture stays up with a plain message and no dead AR button', ok && poster === 'models/posters/tr-909.png');
+  await p.screenshot({ path: path.join(HERE, 'out', 'failed-3d.png') });
   await ctx.close();
 }
 check('Console', 'No console errors in headless Chromium across all of the above', allErrs.length === 0, [...new Set(allErrs)].slice(0, 5).join(' | '));
