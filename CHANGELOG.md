@@ -4,6 +4,10 @@ What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virt
 
 ## Wed Nov 4
 - Leaving the page while the self-timer counts down now cancels it. Before, on a computer the countdown kept running while the camera image froze, so it took a photo of a stale frame the visitor never posed for.
+- A second review, aimed at all-day booth use, sharing, and first-run errors, found three more bugs; all fixed:
+  - In Firefox, a webcam already in use by another app (Teams, Zoom) left visitors stuck on "Warming up the camera" with no way out. They now get the "camera is busy, close other apps" message.
+  - Booth tablets could lose their keep-awake lock after a guest shared to another app, then dim and lock between guests. The lock now comes back.
+  - If the face-tracking download failed (patchy venue Wi-Fi), tracking stayed off until a page reload and the message blamed the device. Reopening the camera now retries the download, and the message points to the connection.
 
 ## Tue Nov 3
 - Follow-up review of everything changed since the October audit found six real bugs; all fixed:

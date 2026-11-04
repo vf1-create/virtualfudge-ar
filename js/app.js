@@ -118,7 +118,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 }
 
 // Start downloading the face model right away so it's ready by the time they tap.
-const trackerReady = initTracker();
+let trackerReady = initTracker(), trackerTries = 1;
 
 $('#startBtn').addEventListener('click', start);
 $('#closeBtn').addEventListener('click', () => { stopCamera(); show('intro'); });
@@ -142,12 +142,12 @@ $('#flipBtn').addEventListener('click', async () => {
     }
     state.faces = []; resume();
   } catch (e) {
-    if (e?.name === 'AbortError') return;
+    if (e?.superseded) return;
     console.warn(e);
     if (!$('#ar').classList.contains('active')) return; // the camera was closed while the switch was in flight
     state.facing = prev.facing; // go back to the camera that worked
     try { await startCamera(prev.deviceId); resume(); toast('Couldn’t switch cameras.', 2600); }
-    catch (e2) { if (e2?.name !== 'AbortError') { stopCamera(); show('intro'); cameraError(e2); } }
+    catch (e2) { if (!e2?.superseded) { stopCamera(); show('intro'); cameraError(e2); } }
   } finally {
     flipping = false; $('#flipBtn').disabled = false;
   }
@@ -172,7 +172,7 @@ async function start() {
   try {
     await Promise.all([startCamera(), fontsReady]);
   } catch (e) {
-    if (e?.name === 'AbortError') return; // closed while the camera was starting
+    if (e?.superseded || !$('#ar').classList.contains('active')) return; // closed or replaced while starting
     cameraError(e);
     show('intro');
     return;
@@ -182,9 +182,10 @@ async function start() {
   setTimeout(() => { if (loading.classList.contains('done')) loading.hidden = true; }, 450); // out of the accessibility tree too
   layoutControls();
   resume();
+  if (state.trackerFailed) trackerReady = initTracker(trackerTries++); // last load failed, often a dropped download: retry
   trackerReady.then((lm) => {
     state.landmarker = lm; state.trackerFailed = !lm; state.trackStart = performance.now();
-    if (!lm && $('#ar').classList.contains('active')) toast('Face tracking isn’t available on this device. Tap the screen for effects.', 4500);
+    if (!lm && $('#ar').classList.contains('active')) toast('Face tracking couldn’t load. Check the connection, then close and reopen the camera. Tap the screen for effects meanwhile.', 5000);
   });
 }
 
@@ -250,6 +251,8 @@ function showCamError(msg) {
 // ── Camera + tracking ────────────────────────────────────────
 
 let camGen = 0; // bumped by every start/stop, so a slow camera request can't revive a closed session
+// marked so it can't be confused with the browser's own AbortError (Firefox uses that for 'camera busy')
+const superseded = () => Object.assign(new DOMException('Camera request superseded', 'AbortError'), { superseded: true });
 async function startCamera(deviceId) {
   const gen = ++camGen;
   releaseStream();
@@ -258,7 +261,7 @@ async function startCamera(deviceId) {
     audio: false,
     video: deviceId ? { deviceId: { exact: deviceId }, ...size } : { facingMode: state.facing, ...size },
   });
-  if (gen !== camGen) { stream.getTracks().forEach((t) => t.stop()); throw new DOMException('Camera request superseded', 'AbortError'); }
+  if (gen !== camGen) { stream.getTracks().forEach((t) => t.stop()); throw superseded(); }
   state.stream = stream;
   const settings = stream.getVideoTracks()[0]?.getSettings?.() || {};
   state.deviceId = settings.deviceId || null;
@@ -277,7 +280,7 @@ async function startCamera(deviceId) {
   video.srcObject = stream;
   await video.play();
   if (!video.videoWidth) await new Promise((r) => video.addEventListener('loadedmetadata', r, { once: true }));
-  if (gen !== camGen) throw new DOMException('Camera request superseded', 'AbortError');
+  if (gen !== camGen) throw superseded();
 }
 
 // keep the screen on while the camera is open (kiosks, tablets on stands)
@@ -313,9 +316,9 @@ function stopCamera() {
   releaseStream();
 }
 
-function initTracker() {
+function initTracker(retry = 0) {
   return (async () => {
-    const { FaceLandmarker, FilesetResolver } = await import('../vendor/mediapipe/vision_bundle.mjs');
+    const { FaceLandmarker, FilesetResolver } = await import(new URL(`../vendor/mediapipe/vision_bundle.mjs${retry ? `?retry=${retry}` : ''}`, import.meta.url).href); // a failed import is cached per URL
     setMesh(FaceLandmarker.FACE_LANDMARKS_TESSELATION);
     const wasm = await FilesetResolver.forVisionTasks(new URL('../vendor/mediapipe/wasm', import.meta.url).href);
     const options = (delegate) => ({
@@ -743,7 +746,7 @@ $('#retakeBtn').addEventListener('click', () => {
   $('#resultMedia video')?.pause();
   const live = state.stream?.getVideoTracks()[0]?.readyState === 'live';
   if (!live) { start(); return; } // the camera went away while the result was showing
-  show('ar'); layoutControls(); resume();
+  show('ar'); layoutControls(); resume(); keepAwake(true); // a share to another app may have released the lock
 });
 
 const tagTip = () => (C.handle ? `Tag ${C.handle} when you post.` : `Post it with ${C.hashtag}.`);
@@ -801,7 +804,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && countTimer) cancelCountdown(); // drawing pauses while hidden, so it would shoot a frozen frame
   if (!document.hidden) {
     state.q = null; // the gap while hidden says nothing about device speed
-    if ($('#ar').classList.contains('active') && state.stream) keepAwake(true);
+    if (state.stream) keepAwake(true); // camera or result screen: hiding the page released the lock
     if ($('#intro').classList.contains('active')) meshTick();
   }
 });

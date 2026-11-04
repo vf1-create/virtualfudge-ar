@@ -187,5 +187,54 @@ export default async function (check) {
       check('camera blocked: back on the intro with instructions', r.screen === 'intro' && r.msg.length > 20, JSON.stringify(r));
       await p.context().close();
     }
+    // Camera busy: Firefox reports a webcam held by another app as AbortError, which must not look like "closed while starting"
+    {
+      const p = await page(b, LAPTOP);
+      await p.addInitScript(() => { navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException('Starting videoinput failed', 'AbortError')); });
+      await open(p); await p.click('#startBtn', { force: true }); await p.waitForTimeout(1500);
+      const r = await p.evaluate(() => ({ screen: document.querySelector('.screen.active').id, msg: document.querySelector('#camError').hidden ? '' : document.querySelector('#camError').textContent }));
+      check('camera busy: back on the intro with the busy message, not stuck loading', r.screen === 'intro' && /busy/i.test(r.msg), JSON.stringify(r));
+      await p.context().close();
+    }
+    // Wake lock: sharing to another app hides the page and releases the lock; it must come back for the booth
+    {
+      const p = await page(b, PHONE);
+      await p.addInitScript(() => {
+        const held = new Set();
+        Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: { request: async () => {
+          const l = new EventTarget(); l.released = false; held.add(l);
+          l.release = async () => { if (l.released) return; l.released = true; held.delete(l); l.dispatchEvent(new Event('release')); };
+          return l;
+        } } });
+        window.__locks = () => held.size;
+        window.__hide = (h) => { // what the browser does when another app comes to the front
+          Object.defineProperty(document, 'hidden', { value: h, configurable: true });
+          if (h) [...held].forEach((l) => l.release());
+          document.dispatchEvent(new Event('visibilitychange'));
+        };
+      });
+      await open(p); await p.click('#startBtn', { force: true }); await ready(p);
+      await p.click('#shutter'); await waitScreen(p, 'result');
+      await p.evaluate(() => window.__hide(true)); await p.waitForTimeout(200);
+      await p.evaluate(() => window.__hide(false)); await p.waitForTimeout(200);
+      await p.click('#retakeBtn'); await waitScreen(p, 'ar'); await p.waitForTimeout(300);
+      const locks = await p.evaluate(() => window.__locks());
+      check('the screen stays awake after a share hands off to another app', locks === 1, `wake locks held: ${locks}`);
+      await p.context().close();
+    }
+    // Engine download dropped (bad venue Wi-Fi): reopening the camera retries it instead of giving up for the session
+    {
+      const p = await page(b, { ...LAPTOP, serviceWorkers: 'block' });
+      let blocked = true;
+      await p.route('**/face_landmarker.task*', (r) => (blocked ? r.abort() : r.continue()));
+      await open(p); await p.click('#startBtn', { force: true });
+      const failedFirst = await p.waitForFunction(() => window.__ar?.trackerFailed === true, null, { timeout: 60000 }).then(() => true, () => false);
+      blocked = false; // the connection recovers
+      await p.click('#closeBtn'); await waitScreen(p, 'intro');
+      await p.click('#startBtn', { force: true });
+      const recovered = await ready(p).then(() => true, () => false);
+      check('a failed engine download is retried when the camera reopens', failedFirst && recovered, JSON.stringify({ failedFirst, recovered }));
+      await p.context().close();
+    }
   } finally { await b.close(); }
 }
