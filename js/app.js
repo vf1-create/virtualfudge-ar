@@ -798,6 +798,7 @@ function toast(msg, ms = 2600) {
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && state.recorder) stopRecording();
+  if (document.hidden && countTimer) cancelCountdown(); // drawing pauses while hidden, so it would shoot a frozen frame
   if (!document.hidden) {
     state.q = null; // the gap while hidden says nothing about device speed
     if ($('#ar').classList.contains('active') && state.stream) keepAwake(true);

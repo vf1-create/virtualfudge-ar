@@ -2,6 +2,9 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Wed Nov 4
+- Leaving the page while the self-timer counts down now cancels it. Before, on a computer the countdown kept running while the camera image froze, so it took a photo of a stale frame the visitor never posed for.
+
 ## Tue Nov 3
 - Follow-up review of everything changed since the October audit found six real bugs; all fixed:
   - Pressing the shutter, Space or the self-timer during a video recording now stops the recording instead of photographing over it and corrupting the clip (the worst of the six).

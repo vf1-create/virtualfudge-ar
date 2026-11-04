@@ -146,6 +146,13 @@ export default async function (check) {
       await p.click('#shutter'); await p.waitForTimeout(1500);
       check('tapping during the countdown cancels it', (await screen(p)) === 'ar' && !(await p.textContent('#countNum')), await screen(p));
       await p.click('#timerBtn'); await p.click('#timerBtn'); // 10 s → off → 3 s
+      // leaving the tab mid-countdown cancels it rather than shooting a frozen frame later
+      await p.click('#shutter'); await p.waitForTimeout(300);
+      await p.evaluate(() => { Object.defineProperty(document, 'hidden', { value: true, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+      await p.waitForTimeout(4000);
+      const hid = { screen: await screen(p), count: await p.textContent('#countNum') };
+      await p.evaluate(() => { Object.defineProperty(document, 'hidden', { value: false, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+      check('hiding the page cancels a running countdown', hid.screen === 'ar' && !hid.count, JSON.stringify(hid));
       await p.click('#shutter'); await waitScreen(p, 'result', 10000);
       check('self-timer takes the photo when it ends', (await result(p)).kind === 'photo');
       await p.context().close();
