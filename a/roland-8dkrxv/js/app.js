@@ -8,10 +8,16 @@ const STORES = ['nyc', 'london', 'tokyo'];
 const storeId = STORES.includes(params.get('store')) ? params.get('store') : 'nyc';
 const base = new URL('.', location.href);
 
-const [store, data] = await Promise.all([
-  fetch(`stores/${storeId}.json`).then((r) => r.json()),
-  fetch('data/instruments.json').then((r) => r.json()),
-]);
+const getJSON = (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(`${u}: HTTP ${r.status}`); return r.json(); });
+let store, data;
+try {
+  [store, data] = await Promise.all([getJSON(`stores/${storeId}.json`), getJSON('data/instruments.json')]);
+} catch (e) {
+  // weak in-store Wi-Fi: say so and offer a retry instead of an empty map
+  $('#line').innerHTML = '<li class="oops">The map didn’t load. Check your connection, then <button type="button" class="retry">try again</button>.</li>';
+  $('#line .retry').addEventListener('click', () => location.reload());
+  throw e;
+}
 const byId = Object.fromEntries(data.instruments.map((i) => [i.id, i]));
 const stations = store.stations.map((id) => byId[id]).filter(Boolean).sort((a, b) => a.year - b.year || store.stations.indexOf(a.id) - store.stations.indexOf(b.id));
 
@@ -47,7 +53,8 @@ line.addEventListener('click', (e) => {
 let mvReady = null;
 const loadViewer = () => (mvReady ||= import('../vendor/model-viewer.min.js'));
 const idle = window.requestIdleCallback || ((f) => setTimeout(f, 1200));
-addEventListener('load', () => idle(() => loadViewer()));
+const prefetch = () => idle(() => loadViewer());
+if (document.readyState === 'complete') prefetch(); else addEventListener('load', prefetch);
 
 let qrReady = null;
 const loadQR = () => (qrReady ||= new Promise((res, rej) => {
@@ -95,9 +102,8 @@ async function openCard(id, push) {
     `<button slot="hotspot-${n}" class="hot" type="button" data-position="${pos}" data-normal="0m 1m 0m" tabindex="-1"><span>${text}</span></button>`).join('');
   viewer.appendChild(mv);
   requestAnimationFrame(() => requestAnimationFrame(() => viewer.classList.add('lifted')));
-  await loadViewer();
   mv.addEventListener('load', async () => {
-    if (current !== i) return;
+    if (current !== i || !mv.isConnected) return; // a card closed or reopened before this model finished
     bindModel(mv);
     if (!mv.canActivateAR) {
       // desktop: offer the phone instead
@@ -110,6 +116,7 @@ async function openCard(id, push) {
       $('#qr').hidden = false;
     }
   }, { once: true });
+  await loadViewer();
 }
 function closeCard() {
   card.hidden = true;
@@ -137,7 +144,10 @@ function renderSongs(i) {
       <a href="https://music.apple.com/${cc}/search?term=${q}" target="_blank" rel="noopener">Apple Music</a>
       <a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">YouTube</a></p>`;
     li.querySelector('.song').textContent = `${s.title} – ${s.artist}, ${s.year}`;
-    li.querySelectorAll('a').forEach((a) => a.setAttribute('aria-label', `Listen to ${s.title} by ${s.artist} on ${a.textContent}`));
+    li.querySelectorAll('a').forEach((a) => {
+      a.setAttribute('aria-label', `Listen to ${s.title} by ${s.artist} on ${a.textContent}`);
+      a.addEventListener('click', stopBeat); // the real song plays in their app, never over our 808
+    });
     ul.appendChild(li);
   }
 }
@@ -208,12 +218,7 @@ function setupSeq() {
     const b = document.createElement('button');
     b.type = 'button'; b.className = `pad ${GROUPS[s >> 2]}`; b.dataset.step = s;
     b.innerHTML = `<span class="led"></span><span class="n">${s + 1}</span>`;
-    b.addEventListener('click', () => {
-      unlock();
-      const on = (drum.steps[row][s] = !drum.steps[row][s]);
-      if (on && !drum.playing) drum.hit(row);
-      syncAll();
-    });
+    b.addEventListener('click', () => toggle(row, s));
     $('#pads').appendChild(b);
   }
   // the whole pattern at a glance; tap a cell to toggle it too
@@ -221,7 +226,7 @@ function setupSeq() {
     const label = document.createElement('span'); label.className = 'gl'; label.textContent = r.short; $('#grid').appendChild(label);
     for (let s = 0; s < 16; s++) {
       const c = document.createElement('span'); c.className = `cell ${GROUPS[s >> 2]}`; c.dataset.row = r.id; c.dataset.step = s;
-      c.addEventListener('click', () => { unlock(); row = r.id; const on = (drum.steps[r.id][s] = !drum.steps[r.id][s]); if (on && !drum.playing) drum.hit(r.id); syncAll(); });
+      c.addEventListener('click', () => { row = r.id; toggle(r.id, s); });
       $('#grid').appendChild(c);
     }
   }
@@ -234,6 +239,13 @@ function setupSeq() {
     $(`.pad[data-step="${s}"]`).classList.add('now');
     document.querySelectorAll(`.cell[data-step="${s}"]`).forEach((x) => x.classList.add('now'));
   };
+  syncAll();
+}
+// turn a step on or off; a new hit is previewed when the beat isn't running
+function toggle(id, s) {
+  drum.unlock();
+  const on = (drum.steps[id][s] = !drum.steps[id][s]);
+  if (on && !drum.playing) drum.hit(id);
   syncAll();
 }
 function syncAll() {
@@ -251,6 +263,10 @@ function syncAll() {
     c.classList.toggle('sel', c.dataset.row === row);
   });
 }
+function stopBeat() {
+  if (drum?.playing) { drum.stop(); syncPlay(); }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopBeat(); });
 function syncPlay() {
   if (!drum) return;
   $('#play').textContent = drum.playing ? '■ Stop' : '▶ Play';

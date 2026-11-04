@@ -23,9 +23,10 @@ console.log(`${dry ? 'Would remove' : 'Removing'}: ${dirs.join(', ')}`);
 if (dry) process.exit(0);
 
 const git = (...args) => execFileSync('git', args, { cwd: ROOT, stdio: 'inherit' });
-for (const d of dirs) {
-  git('rm', '-r', '-q', '--ignore-unmatch', '--', d);
-  fs.rmSync(path.join(ROOT, d), { recursive: true, force: true }); // untracked leftovers (reports, test output)
-}
+for (const d of dirs) git('rm', '-r', '-q', '--ignore-unmatch', '--', d);
+// gitignored files (OUTREACH.md, TEST-REPORT.md, test output) were never published and exist only here:
+// leave them on disk instead of deleting the only copy
+const kept = dirs.flatMap((d) => (fs.existsSync(path.join(ROOT, d)) ? fs.readdirSync(path.join(ROOT, d), { recursive: true, withFileTypes: true }).filter((f) => f.isFile()).map((f) => path.relative(ROOT, path.join(f.parentPath ?? f.path, f.name))) : []));
 git('commit', '-q', '-m', `Take down the ${name} activation`, '--', ...dirs);
+if (kept.length) console.log(`Kept on this computer (never published): ${kept.join(', ')}`);
 console.log(`\nCommitted. To take it offline, push:\n  git push origin HEAD\nThe page returns 404 once GitHub Pages redeploys (about a minute).`);

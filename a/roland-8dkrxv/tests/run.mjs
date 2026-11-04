@@ -208,6 +208,12 @@ for (const [store, name, n] of [['nyc', 'Roland Store New York City', 7], ['lond
   check('Audio', 'Play runs the sequencer: hits scheduled and the playhead moves', b.hits > 5 && b.now, JSON.stringify(b));
   const lit = await p.evaluate(() => { const l = window.__heritage.leds; return l && { n: l.led.filter(Boolean).length, lit: l.led.filter((m) => m.emissiveFactor[0] > 0.5).length }; });
   check('Cards', 'The 3D 808 follows the sequencer: its 16 step LEDs light up with the pattern and the playhead', lit && lit.n === 16 && lit.lit >= 1, JSON.stringify(lit));
+  // tapping a streaming link, or leaving the tab, stops the beat so it never plays over the real song
+  await p.tap('#play'); await p.waitForTimeout(300);
+  const linkStops = await p.evaluate(() => { const a = document.querySelector('#songs a'); a.addEventListener('click', (e) => e.preventDefault(), { once: true }); a.click(); return !window.__heritage.drum.playing; });
+  await p.tap('#play'); await p.waitForTimeout(300);
+  const hideStops = await p.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); delete document.hidden; return !window.__heritage.drum.playing && document.querySelector('#play').textContent.includes('Play'); });
+  check('Audio', 'The beat stops when a Spotify / Apple Music / YouTube link is tapped or the tab is left, so it never plays over the real song', linkStops && hideStops, JSON.stringify({ linkStops, hideStops }));
   const hot = await p.evaluate(() => document.querySelectorAll('model-viewer .hot').length);
   check('Cards', 'Three labelled hotspots pinned to the 3D 808 (step keys, tempo, voices)', hot === 3);
   await p.tap('#play');
@@ -253,6 +259,16 @@ for (const [store, name, n] of [['nyc', 'Roland Store New York City', 7], ['lond
   await done(p);
 }
 
+{
+  // weak in-store Wi-Fi: a failed config download shows a retry message, not an empty map
+  const ctx = await browser.newContext();
+  const p = await ctx.newPage();
+  await p.route('**/data/instruments.json', (r) => r.abort());
+  await p.goto(BASE);
+  const msg = await p.waitForSelector('.oops .retry', { timeout: 10000 }).then(() => true, () => false);
+  check('Layout', 'If the map data fails to load, the visitor sees "try again" instead of an empty page', msg);
+  await ctx.close();
+}
 check('Console', 'No console errors in headless Chromium across all of the above', allErrs.length === 0, [...new Set(allErrs)].slice(0, 5).join(' | '));
 const ext = [...new Set(allExternal)];
 check('Network', 'No requests to any other host while using the demo (no paid services, CDNs or trackers)', ext.length === 0, ext.slice(0, 5).join(', '));

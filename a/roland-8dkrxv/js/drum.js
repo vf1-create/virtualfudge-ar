@@ -114,8 +114,9 @@ export class Drum {
     this.next = this.ctx.currentTime + 0.06;
     this.timer = setInterval(() => this.schedule(), 25);
     this.schedule();
+    const run = (this.run = (this.run || 0) + 1); // a quick stop/start retires the previous draw loop
     const draw = () => {
-      if (!this.playing) return;
+      if (!this.playing || run !== this.run) return;
       const now = this.ctx.currentTime;
       while (this.queue.length && this.queue[0].t <= now) this.onStep(this.queue.shift().step);
       requestAnimationFrame(draw);
