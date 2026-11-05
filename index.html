@@ -94,6 +94,14 @@
     <h2 id="resultHeading" class="visually-hidden" tabindex="-1">Your photo is ready</h2>
     <div id="resultMedia" class="result-media"></div>
     <p id="resultMeta" class="result-meta"></p>
+    <div id="boothPanel" class="booth-panel" hidden>
+      <canvas id="boothQR" width="264" height="264" role="img" aria-label="QR code that opens this AR camera on your own phone"></canvas>
+      <div>
+        <p class="booth-title">Scan to make yours on your phone</p>
+        <p id="boothSub" class="booth-sub"></p>
+        <p id="boothReset" class="booth-reset"></p>
+      </div>
+    </div>
     <div class="result-actions">
       <button id="shareBtn" class="btn primary">Share <span aria-hidden="true">↗</span></button>
       <button id="retakeBtn" class="btn ghost">Retake</button>

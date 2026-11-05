@@ -21,6 +21,10 @@ export default {
   shareText: 'Got the Virtual Fudge AR treatment @Virtual_Fudge',
   shareUrl: '',                     // link added to shares; blank = this page's URL
 
+  // Booth mode, for a shared tablet at an event: add ?booth to the link. Guests get a QR code to make their own
+  // on their phone instead of Share/Download (nothing is uploaded), and the screen returns to the camera by itself.
+  boothResetSeconds: 45,            // how long a guest's result stays up with nobody touching it
+
   ctaLabel: 'Let’s build yours',    // link on the result screen; blank to hide
   ctaUrl: 'https://virtualfudge.com',
 

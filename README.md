@@ -56,13 +56,13 @@ Browsers only allow the camera on `https://` or `localhost`.
 
 ### Run the tests
 
-97 browser checks cover the camera flow, keyboard use, eleven screen shapes from iPhone SE in Safari to a 1080p desktop, the promo kit (including scanning every QR code it makes), the offline cache, an automated accessibility scan (axe-core, WCAG 2.1 AA) of every screen, and a rebrand check that loads the site under a made-up brand and verifies every surface follows config.js. They drive a headless Chrome with a fake webcam.
+111 browser checks cover the camera flow, keyboard use, eleven screen shapes from iPhone SE in Safari to a 1080p desktop, the promo kit (including scanning every QR code it makes), the offline cache, an automated accessibility scan (axe-core, WCAG 2.1 AA) of every screen, a rebrand check that loads the site under a made-up brand and verifies every surface follows config.js, and booth mode. They drive a headless Chrome with a fake webcam.
 
 ```bash
 npm install && npx playwright install chromium   # once
 npm run camera -- path/to/portrait.jpg           # once: any front-facing face photo becomes the fake webcam (needs ffmpeg)
 npm test                                         # everything, about 4 minutes
-npm test -- kit devices                          # just some suites: app, devices, kit, offline, a11y, brand
+npm test -- kit devices                          # just some suites: app, devices, kit, offline, a11y, brand, booth
 ```
 
 Screenshots of every screen and device, the posters and a sample clip land in `tests/out/`. Run the tests before deploying a change.
@@ -93,6 +93,15 @@ Open **`/tools/kit.html`** on your deployed site:
 - Type a bare domain and the kit adds `https://`; anything that won't work on a phone camera (plain http, or a link too long for a QR) is flagged and the downloads stay off until it's fixed.
 
 Ideas: put the Story image up with a link sticker; put NFC stickers on table tents, wristbands or the ticket booth; show the poster QR on the venue big screen at halftime.
+
+## Booth mode: a shared tablet at an event
+
+Add `?booth` to the link (e.g. `https://vf1-create.github.io/virtualfudge-ar/?booth`) and open it on the event tablet:
+
+- Guests take their photo or video as usual. The result screen shows a big QR code: **"Scan to make yours on your phone."** It opens the filter on their own phone (tagged `src=booth-qr`), where they can save and post.
+- No Share, Download or Copy on the tablet, so it never posts from the tablet's accounts or keeps guests' photos. Nothing is uploaded anywhere.
+- With nobody touching it, the result goes back to the camera after `boothResetSeconds` (45 by default, in `config.js`) and the guest's photo is cleared. Any touch restarts the countdown, and "Next guest" skips it.
+- The screen stays on while the camera is open. Tip: use the tablet's guided-access or kiosk mode so guests can't leave the page.
 
 ## 5. Analytics (optional, still self-hosted)
 

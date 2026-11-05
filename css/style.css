@@ -190,6 +190,16 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
 .tag-line { position: relative; z-index: 2; margin: -4px 0 -8px; font-size: 12px; color: var(--muted); }
 .caption-text { color: var(--ink); -webkit-user-select: all; user-select: all; } /* one long press selects the whole caption */
 .cta { position: relative; z-index: 2; color: var(--brand); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; padding: 4px 8px; }
+/* Booth mode (?booth): the result screen offers a QR code to each guest's own phone, never the tablet's Share/Download */
+.booth #shareBtn, .booth #saveBtn, .booth #copyBtn, .booth #saveHint, .booth #captionText, .booth #tagLine, .booth #cta { display: none !important; }
+.booth-panel { position: relative; z-index: 2; display: flex; align-items: center; gap: 16px; width: min(100%, 420px); padding: 14px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); }
+.booth-panel canvas { width: 132px; height: 132px; flex: none; }
+.booth-panel p { margin: 0; }
+.booth-title { font-weight: 500; font-size: 15px; line-height: 1.35; }
+.booth-sub { margin-top: 4px !important; font-size: 12.5px; color: var(--muted); }
+.booth-reset { margin-top: 10px !important; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (min-width: 700px) and (min-height: 700px) { .booth-panel canvas { width: 168px; height: 168px; } .booth-title { font-size: 17px; } }
+
 /* Short portrait screens (iPhone Safari keeps ~190px for its own bars): tighter spacing around the result,
    so the photo people are about to share gets the room. Buttons keep a 44px touch height. */
 @media (orientation: portrait) and (max-height: 760px) {
@@ -251,6 +261,8 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
   #result .result-meta { grid-column: 2; grid-row: 2; margin: 0; }
   #result .result-actions { grid-column: 2; grid-row: 3; width: 100%; }
   #result #tagLine { grid-column: 2; grid-row: 4; margin: 0; }
+  .booth #result #boothPanel { grid-column: 2; grid-row: 3; } /* booth: the QR comes first, the button under it, in the tag line's row */
+  .booth #result .result-actions { grid-row: 4; }
   #result #saveHint { grid-column: 2; grid-row: 5; margin: 0; }
   #result .cta { grid-column: 2; grid-row: 6; justify-self: start; padding-left: 0; }
   #result .btn { padding: 12px 14px; font-size: 13.5px; white-space: nowrap; }

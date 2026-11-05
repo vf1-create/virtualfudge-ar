@@ -10,6 +10,8 @@ What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virt
   - On an iPhone SE in Safari the shutter no longer sits over the caption text in the live preview; it shrinks to fit (never below 56px).
 - Moving-face test (head drifting and tilting): all four filters kept the face 100% of the time.
 
+- New booth mode for event tablets (`?booth`): guests get a QR code to make their own on their phone instead of Share/Download on the tablet, and the result clears itself for the next guest after 45 s. A review before shipping caught three problems in it, all fixed first (including one that would have hidden the result buttons for normal visitors). Normal visitors are unaffected; 14 new checks.
+
 ## Wed Nov 4
 - Leaving the page while the self-timer counts down now cancels it. Before, on a computer the countdown kept running while the camera image froze, so it took a photo of a stale frame the visitor never posed for.
 - A second review, aimed at all-day booth use, sharing, and first-run errors, found three more bugs; all fixed:

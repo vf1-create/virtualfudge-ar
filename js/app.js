@@ -18,6 +18,8 @@ const src = new URLSearchParams(location.search).get('src') || 'direct';
 const track = (event, data = {}) => { try { C.track?.(event, { src, filter: FILTERS[state.filter]?.id, ...data }); } catch {} };
 
 const ua = navigator.userAgent;
+// booth mode: a shared tablet at an event (?booth). See boothResetSeconds in config.js.
+const BOOTH = new URLSearchParams(location.search).has('booth');
 const IN_APP = /Instagram|FBAN|FBAV|TikTok|musical_ly|BytedanceWebview|Snapchat|Twitter|LinkedInApp|; wv\)/i.test(ua); // social apps + Android WebViews
 const IOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const IOS_OTHER = /CriOS|FxiOS|EdgiOS/.test(ua); // Chrome/Firefox/Edge on iOS
@@ -87,14 +89,14 @@ if (C.ctaLabel && C.ctaUrl) {
 }
 
 const isDesktop = matchMedia('(hover: hover) and (pointer: fine)').matches;
-if (isDesktop) { // phones never need the QR library
+// a QR code that opens this page on the visitor's own phone, tagged with where they scanned it
+const phoneLink = (tag) => { const u = new URL(location.origin + location.pathname); u.searchParams.set('src', tag); return u.href; }; // never echo foreign query params
+if (isDesktop || BOOTH) { // phones never need the QR library
   const s = Object.assign(document.createElement('script'), { src: 'vendor/qrcode.js', async: true });
   s.onload = () => {
     try {
-      const u = new URL(location.origin + location.pathname); // never echo foreign query params into the code
-      u.searchParams.set('src', 'desktop-qr');
-      drawQR($('#qr'), u.href);
-      $('#desktopQR').hidden = false;
+      if (isDesktop) { drawQR($('#qr'), phoneLink('desktop-qr')); $('#desktopQR').hidden = false; }
+      if (BOOTH) drawQR($('#boothQR'), phoneLink('booth-qr'));
     } catch (e) { console.warn(e); }
   };
   document.head.append(s);
@@ -725,6 +727,7 @@ function showResult(blob, kind, seconds) {
     ? 'To save: press and hold the photo, or open this page in your browser (••• › Open in browser).'
     : 'To save the video, open this page in your browser (••• › Open in browser).';
   show('result');
+  if (BOOTH) boothArm();
 }
 
 function fileFor(blob) {
@@ -743,6 +746,37 @@ if (!canShareFiles) {
   $('#copyBtn').hidden = false;
   $('.result-actions').prepend($('#saveBtn')); // the main action comes first in tab order too
 }
+// Booth mode: no Share/Download on a shared tablet (they'd use the tablet's accounts and keep guests' photos);
+// a QR code sends each guest to their own phone instead, and the result clears itself for the next guest.
+// The countdown runs against the clock, not timer ticks: a locked tablet (iOS pauses timers) catches up on waking.
+let boothTimer = 0; // the deadline lives on state.boothDeadline
+function boothTick() {
+  if (!$('#result').classList.contains('active')) { clearInterval(boothTimer); return; }
+  const left = Math.ceil((state.boothDeadline - Date.now()) / 1000);
+  if (left <= 0) { clearInterval(boothTimer); track('booth-reset'); $('#retakeBtn').click(); return; }
+  $('#boothReset').textContent = `Back to the camera in ${left} s`;
+}
+function boothArm() { // (re)start the countdown from now; any touch on the result screen restarts it
+  clearInterval(boothTimer);
+  state.boothDeadline = Date.now() + Math.max(3, C.boothResetSeconds || 45) * 1000;
+  boothTick(); boothTimer = setInterval(boothTick, 1000);
+}
+function boothClear() {
+  clearInterval(boothTimer);
+  const box = $('#resultMedia');
+  box.querySelectorAll('img,video').forEach((el) => URL.revokeObjectURL(el.src));
+  box.innerHTML = '';
+  state.blob = null;
+}
+if (BOOTH) {
+  document.documentElement.classList.add('booth');
+  $('#boothPanel').hidden = false;
+  $('#boothSub').textContent = C.handle ? `Then post it and tag ${C.handle}` : `Then post it with ${C.hashtag}`;
+  $('#retakeBtn').textContent = 'Next guest';
+  $('#retakeBtn').classList.replace('ghost', 'primary');
+  for (const ev of ['pointerdown', 'keydown']) $('#result').addEventListener(ev, () => { if ($('#result').classList.contains('active')) boothArm(); });
+}
+
 // some in-app browsers block the async clipboard but still allow the older copy command
 function copyFallback(text) {
   const ta = Object.assign(document.createElement('textarea'), { value: text, readOnly: true });
@@ -767,6 +801,7 @@ $('#copyBtn').addEventListener('click', async () => {
 
 $('#retakeBtn').addEventListener('click', () => {
   $('#resultMedia video')?.pause();
+  if (BOOTH) boothClear();
   const live = state.stream?.getVideoTracks()[0]?.readyState === 'live';
   if (!live) { start(); return; } // the camera went away while the result was showing
   show('ar'); layoutControls(); resume(); keepAwake(true); // a share to another app may have released the lock
@@ -829,6 +864,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && state.recorder) stopRecording();
   if (document.hidden && countTimer) cancelCountdown(); // drawing pauses while hidden, so it would shoot a frozen frame
   if (!document.hidden) {
+    if (BOOTH && $('#result').classList.contains('active')) boothTick(); // a tablet left locked past the countdown resets now
     state.q = null; // the gap while hidden says nothing about device speed
     if (state.stream) keepAwake(true); // camera or result screen: hiding the page released the lock
     if ($('#intro').classList.contains('active')) meshTick();
