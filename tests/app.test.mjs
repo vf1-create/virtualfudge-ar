@@ -274,15 +274,15 @@ export default async function (check) {
       await p.context().close();
     }
     // A browser too old to parse the app gets told so, instead of a dead start button
-    {
+    for (const [token, who] of [['?.', 'optional chaining, like iOS 12'], ['||=', 'logical assignment, like iOS 13.4-13.7']]) {
       const p = await page(b, PHONE);
-      await p.addInitScript(() => { // pretend optional chaining doesn't parse, like iOS 12 Safari
+      await p.addInitScript((token) => { // pretend this syntax doesn't parse
         const F = window.Function;
-        window.Function = function (...a) { if (a.join(' ').includes('?.')) throw new SyntaxError('Unexpected token'); return F(...a); };
-      });
+        window.Function = function (...a) { if (a.join(' ').includes(token)) throw new SyntaxError('Unexpected token'); return F(...a); };
+      }, token);
       await p.goto(BASE); await p.waitForTimeout(800);
       const r = await p.evaluate(() => ({ startHidden: document.querySelector('#startBtn').hidden, msg: document.querySelector('#camError').hidden ? '' : document.querySelector('#camError').textContent }));
-      check('a too-old browser sees an update message, not a dead button', r.startHidden && /too old/.test(r.msg), JSON.stringify(r));
+      check(`a browser without ${who} sees an update message, not a dead button`, r.startHidden && /too old/.test(r.msg), JSON.stringify(r));
       await p.context().close();
     }
   } finally { await b.close(); }

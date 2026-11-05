@@ -111,7 +111,8 @@
 
   <script>
     // Browsers too old to run the app (e.g. iOS 12 Safari) can't parse js/app.js and would show a dead start button
-    try { new Function('var a; a?.b; a ?? 1'); } catch (e) {
+    // keep this in step with the newest syntax js/ uses: ?. ?? (Safari 13.4), ||= (Safari 14), numeric separators
+    try { new Function('var a; a?.b; a ?? 1; a ||= 1; 1_000'); } catch (e) {
       document.getElementById('startBtn').hidden = true;
       var err = document.getElementById('camError');
       err.textContent = 'This browser is too old for the AR camera. Update your phone\u2019s software, or open this link in Chrome.';
