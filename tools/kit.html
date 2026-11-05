@@ -29,7 +29,7 @@
     code { background: var(--paper); padding: 2px 6px; border-radius: 2px; font-size: 12px; word-break: break-all; }
     canvas { width: 100%; height: auto; display: block; background: var(--paper); }
     #poster { box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 12px 36px rgba(35,31,32,.14); }
-    #qrPreview { max-width: 220px; border: 1px solid var(--line); }
+    #qrPreview, #boothQR { max-width: 220px; border: 1px solid var(--line); }
     .note { font-size: 12.5px; line-height: 1.6; color: var(--muted); margin: 10px 0 0; }
     #nfcStatus { color: var(--ink); }
     .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -81,6 +81,16 @@
         <p class="note">Writing from this page needs Chrome on Android over https. On iPhone use a free app like “NFC Tools” → Write → URL.</p>
         <p class="note">Lock tags before they go up in public, or anyone with an NFC app can rewrite them to another link. Locking is permanent. In NFC Tools: Other → Lock tag.</p>
       </section>
+
+      <section class="card" style="margin-top:16px">
+        <h2>5 · Event tablet (booth mode)</h2>
+        <p class="note" style="margin-top:0">Point the event tablet's camera at this code to open booth mode. Guests get a QR code to their own phone instead of Share/Download, and the screen resets itself for the next guest.</p>
+        <canvas id="boothQR" width="512" height="512"></canvas>
+        <p class="note">Booth link: <code id="boothUrl"></code></p>
+        <div class="row">
+          <button id="copyBooth" class="alt">Copy booth link</button>
+        </div>
+      </section>
     </div>
 
     <section class="card">
@@ -129,6 +139,13 @@
       if (u.protocol === 'https:' || (u.protocol === 'http:' && LOCAL.test(u.hostname))) return u;
     } catch {}
     return null;
+  }
+  // the link that opens booth mode on an event tablet (see "Booth mode" in the README)
+  function boothUrl() {
+    const u = parseUrl();
+    if (!u) return null;
+    u.searchParams.set('booth', ''); u.searchParams.set('src', 'booth');
+    return u.href;
   }
   function finalUrl(src = $('#src').value) {
     const u = parseUrl();
@@ -274,8 +291,12 @@
     warn.hidden = ok;
     warn.textContent = !url ? 'That isn’t an https:// link. Phone cameras only work on https sites.' : 'That link is too long for a QR code. Try a shorter one.';
     $('#url').setAttribute('aria-invalid', String(!ok));
-    for (const id of ['dlQR', 'copyLink', 'dlPoster', 'writeNfc']) $('#' + id).disabled = !ok;
-    clearTimeout(copiedTimer); $('#copyLink').textContent = 'Copy link';
+    for (const id of ['dlQR', 'copyLink', 'dlPoster', 'writeNfc', 'copyBooth']) $('#' + id).disabled = !ok;
+    clearTimeout(copiedTimer); $('#copyLink').textContent = 'Copy link'; $('#copyBooth').textContent = 'Copy booth link';
+    const bq = $('#boothQR'), booth = boothUrl();
+    bq.getContext('2d').clearRect(0, 0, bq.width, bq.height);
+    if (ok && booth) drawQR(bq, booth, 0, 0, bq.width);
+    $('#boothUrl').textContent = (ok && booth) || '—';
     drawPoster();
   }
   let copiedTimer = 0, pending = 0;
@@ -305,6 +326,16 @@
       btn.textContent = 'Selected: copy it above';
     }
     clearTimeout(copiedTimer); copiedTimer = setTimeout(() => { btn.textContent = 'Copy link'; }, 2500);
+  });
+  $('#copyBooth').addEventListener('click', async () => {
+    const btn = $('#copyBooth');
+    try { await navigator.clipboard.writeText(boothUrl()); btn.textContent = 'Copied ✓'; }
+    catch {
+      const r = document.createRange(); r.selectNodeContents($('#boothUrl'));
+      getSelection().removeAllRanges(); getSelection().addRange(r);
+      btn.textContent = 'Selected: copy it above';
+    }
+    setTimeout(() => { btn.textContent = 'Copy booth link'; }, 2500);
   });
   document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
     document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-pressed', x === b));

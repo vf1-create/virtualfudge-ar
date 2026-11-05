@@ -71,6 +71,8 @@ export default async function (check) {
     await k.addScriptTag({ content: JSQR });
     const qr = await scan(k, '#qrPreview');
     check('downloadable QR scans to the link with its source tag', qr === LIVE + '?src=ig-post', qr);
+    const bqr = await scan(k, '#boothQR');
+    check('booth QR scans to the booth-mode link', bqr === LIVE + '?booth=&src=booth' && (await k.textContent('#boothUrl')) === bqr, bqr);
     for (const t of ['Feed 4:5', 'Story 9:16', 'Print A4']) {
       await k.click(`text=${t}`); await k.waitForTimeout(250);
       const got = await scan(k, '#poster'), want = LIVE + (t.startsWith('Print') ? '?src=poster' : '?src=ig-post');

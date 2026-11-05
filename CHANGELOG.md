@@ -12,6 +12,8 @@ What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virt
 
 - New booth mode for event tablets (`?booth`): guests get a QR code to make their own on their phone instead of Share/Download on the tablet, and the result clears itself for the next guest after 45 s. A review before shipping caught three problems in it, all fixed first (including one that would have hidden the result buttons for normal visitors). Normal visitors are unaffected; 14 new checks.
 
+- Promo kit: a new "Event tablet" card with a QR code and a copy button for the booth-mode link, so staff can set up an event tablet by pointing its camera at the kit.
+
 ## Wed Nov 4
 - Leaving the page while the self-timer counts down now cancels it. Before, on a computer the countdown kept running while the camera image froze, so it took a photo of a stale frame the visitor never posed for.
 - A second review, aimed at all-day booth use, sharing, and first-run errors, found three more bugs; all fixed:
