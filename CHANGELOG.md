@@ -5,6 +5,11 @@ What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virt
 ## Thu Nov 5
 - The "browser too old" check now tests every piece of newer syntax the app uses. Yesterday's version missed one, so iPhones on iOS 13.4–13.7 could still land on a dead start button.
 
+- Tested the way a real iPhone sees the page, with Safari's toolbars taking ~190px. Two presentation fixes came out of it:
+  - The result screen's photo, the one people are about to share, gets much more room on shorter iPhones (iPhone 15: 53% to 64% of the width; iPhone SE: 39% to 54%, almost twice the area).
+  - On an iPhone SE in Safari the shutter no longer sits over the caption text in the live preview; it shrinks to fit (never below 56px).
+- Moving-face test (head drifting and tilting): all four filters kept the face 100% of the time.
+
 ## Wed Nov 4
 - Leaving the page while the self-timer counts down now cancels it. Before, on a computer the countdown kept running while the camera image froze, so it took a photo of a stale frame the visitor never posed for.
 - A second review, aimed at all-day booth use, sharing, and first-run errors, found three more bugs; all fixed:

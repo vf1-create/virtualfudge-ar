@@ -3,7 +3,9 @@ import path from 'node:path';
 import { launch, page, open, OUT } from './lib.mjs';
 
 const DEVICES = [
-  ['iphone-se', 375, 667, true], ['iphone-15', 393, 852, true], ['pixel-7', 412, 915, true], ['android-small', 360, 780, true],
+  ['iphone-se', 375, 667, true], ['iphone-15', 393, 852, true],
+  // what Safari actually leaves for the page once its address and tool bars are showing
+  ['iphone-15-safari', 393, 659, true], ['iphone-se-safari', 375, 548, true], ['pixel-7', 412, 915, true], ['android-small', 360, 780, true],
   ['ipad', 820, 1180, true], ['ipad-land', 1180, 820, true], ['phone-land', 844, 390, true],
   ['laptop', 1280, 800, false], ['desktop', 1920, 1080, false],
 ];
@@ -38,7 +40,9 @@ export default async function (check) {
       await p.screenshot({ path: path.join(OUT, `${name}-3-result.png`) });
       const resultFits = await p.evaluate(() => [...document.querySelectorAll('.result-actions .btn')].filter((x) => !x.hidden)
         .every((x) => { const r = x.getBoundingClientRect(); return r.bottom <= innerHeight && r.right <= innerWidth; }));
-      const bad = Object.entries({ noSideScroll: !intro.hScroll, faceFound: face, ...l, resultFits, noErrors: !p.errs.length }).filter(([, v]) => !v).map(([k]) => k);
+      // on a portrait phone the photo people are about to share should lead the screen
+      const photoBig = !touch || w > h || await p.evaluate(() => document.querySelector('#resultMedia img, #resultMedia video').getBoundingClientRect().width >= innerWidth * 0.5);
+      const bad = Object.entries({ noSideScroll: !intro.hScroll, faceFound: face, ...l, resultFits, photoBig, noErrors: !p.errs.length }).filter(([, v]) => !v).map(([k]) => k);
       check(`${name} ${w}×${h}: layout`, !bad.length, bad.join(', ') + (p.errs.length ? ' | ' + p.errs.join(' | ') : ''));
       await p.context().close();
     }

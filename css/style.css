@@ -136,6 +136,7 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
 .bottombar { position: absolute; left: 0; right: 0; bottom: max(12px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; z-index: 2; }
 #ar.tight .shutter-tip { display: none; }
 #ar.tight .bottombar { bottom: max(8px, env(safe-area-inset-bottom)); }
+#ar.tight .shutter { width: var(--shutter, 70px); height: var(--shutter, 70px); }
 
 #ar.side .filters { left: var(--rail-left); right: auto; top: 50%; width: 180px; transform: translateY(calc(-50% - 50px)); flex-direction: column; overflow: visible; padding: 0; -webkit-mask-image: none; mask-image: none; }
 #ar.side .filters > * { margin: 0; text-align: left; }
@@ -189,6 +190,17 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
 .tag-line { position: relative; z-index: 2; margin: -4px 0 -8px; font-size: 12px; color: var(--muted); }
 .caption-text { color: var(--ink); -webkit-user-select: all; user-select: all; } /* one long press selects the whole caption */
 .cta { position: relative; z-index: 2; color: var(--brand); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; padding: 4px 8px; }
+/* Short portrait screens (iPhone Safari keeps ~190px for its own bars): tighter spacing around the result,
+   so the photo people are about to share gets the room. Buttons keep a 44px touch height. */
+@media (orientation: portrait) and (max-height: 760px) {
+  #result { gap: 10px; padding-top: max(20px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  #result .result-actions .btn { min-height: 44px; padding: 10px 16px; font-size: 14px; }
+  #result .result-meta { margin: 0; }
+  #result .cta { padding: 2px 8px; }
+}
+@media (orientation: portrait) and (max-height: 600px) {
+  #result { gap: 7px; padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+}
 
 .noscript { position: fixed; left: 0; right: 0; bottom: 0; margin: 0; padding: 14px 16px; background: var(--ink); color: var(--paper); font-size: 13px; text-align: center; z-index: 20; }
 .toast { position: fixed; left: 50%; top: calc(max(12px, env(safe-area-inset-top)) + 54px); transform: translateX(-50%) translateY(-12px); max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 2px; background: var(--ink); color: var(--paper); font-size: 12.5px; line-height: 1.5; text-align: center; opacity: 0; pointer-events: none; transition: all .25s; z-index: 10; }

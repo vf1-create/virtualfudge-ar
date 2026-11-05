@@ -127,11 +127,11 @@ export default async function (check) {
       const p = await page(b, LAPTOP);
       await p.addInitScript(() => { // a slow phone: the JPEG takes a while to encode
         const tb = HTMLCanvasElement.prototype.toBlob;
-        HTMLCanvasElement.prototype.toBlob = function (cb, ...a) { return tb.call(this, (blob) => setTimeout(() => cb(blob), 1500), ...a); };
+        HTMLCanvasElement.prototype.toBlob = function (cb, ...a) { return tb.call(this, (blob) => setTimeout(() => cb(blob), 6000), ...a); };
       });
       await open(p); await p.click('#startBtn', { force: true }); await ready(p);
-      await p.click('#shutter'); await p.waitForTimeout(150);
-      await p.click('#closeBtn'); await p.waitForTimeout(2500);
+      // a long fake encode, so even a starved test machine closes the camera before the save completes
+      await p.click('#shutter'); await p.click('#closeBtn'); await p.waitForTimeout(7000);
       check('closing the camera mid-save drops the photo instead of popping up the result', (await screen(p)) === 'intro', await screen(p));
       await p.context().close();
     }

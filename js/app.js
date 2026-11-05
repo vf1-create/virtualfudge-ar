@@ -213,6 +213,8 @@ function layoutControls() {
   // room under the caption text for the shutter (+ its tip)?
   const room = innerHeight - textBottom;
   ar.classList.toggle('tight', room < 70 + 26 + 18);
+  // the shortest screens (iPhone SE in Safari) can't fit even the bare shutter: shrink it to fit, never under 56px
+  ar.style.setProperty('--shutter', `${Math.max(56, Math.min(70, Math.floor(room - 8 - 6)))}px`);
 }
 addEventListener('resize', layoutControls);
 addEventListener('orientationchange', () => setTimeout(layoutControls, 250));
