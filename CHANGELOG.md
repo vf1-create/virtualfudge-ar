@@ -2,6 +2,9 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Fri Nov 6
+- Booth tablets added to the home screen (the usual way to run a kiosk full-screen) now reopen in booth mode, not the normal one.
+
 ## Thu Nov 5
 - The "browser too old" check now tests every piece of newer syntax the app uses. Yesterday's version missed one, so iPhones on iOS 13.4–13.7 could still land on a dead start button.
 

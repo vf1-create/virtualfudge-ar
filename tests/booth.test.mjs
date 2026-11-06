@@ -69,6 +69,8 @@ export default async function (check) {
       await p.evaluate(() => { window.__skew = 0; });
       await photo(p); // the next guest's turn works the same way
       check('booth: the next guest gets a fresh result', (await screen(p)) === 'result' && (await shown(p)).panel);
+      const mf = await p.evaluate(async () => { const href = document.querySelector('link[rel="manifest"]').href; return { href, start: (await (await fetch(href)).json()).start_url }; });
+      check('booth: Add to Home Screen reopens in booth mode', mf.href.endsWith('/manifest-booth.webmanifest') && /[?&]booth\b/.test(mf.start), JSON.stringify(mf));
       check('booth: no page errors', !p.errs.length, p.errs.join(' | '));
       await p.context().close();
     }
@@ -88,6 +90,7 @@ export default async function (check) {
       await photo(p);
       const ui = await shown(p);
       check('normal mode is untouched: no booth panel, the usual buttons', !ui.panel && ui.next === 'Retake' && (ui.share || ui.save) && ui.tag, JSON.stringify(ui));
+      check('normal mode keeps the normal home-screen app', (await p.evaluate(() => document.querySelector('link[rel="manifest"]').href)).endsWith('/manifest.webmanifest'));
       await p.context().close();
     }
   } finally { await b.close(); }

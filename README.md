@@ -56,7 +56,7 @@ Browsers only allow the camera on `https://` or `localhost`.
 
 ### Run the tests
 
-112 browser checks cover the camera flow, keyboard use, eleven screen shapes from iPhone SE in Safari to a 1080p desktop, the promo kit (including scanning every QR code it makes), the offline cache, an automated accessibility scan (axe-core, WCAG 2.1 AA) of every screen, a rebrand check that loads the site under a made-up brand and verifies every surface follows config.js, and booth mode. They drive a headless Chrome with a fake webcam.
+114 browser checks cover the camera flow, keyboard use, eleven screen shapes from iPhone SE in Safari to a 1080p desktop, the promo kit (including scanning every QR code it makes), the offline cache, an automated accessibility scan (axe-core, WCAG 2.1 AA) of every screen, a rebrand check that loads the site under a made-up brand and verifies every surface follows config.js, and booth mode. They drive a headless Chrome with a fake webcam.
 
 ```bash
 npm install && npx playwright install chromium   # once
@@ -103,6 +103,7 @@ Add `?booth` to the link (e.g. `https://vf1-create.github.io/virtualfudge-ar/?bo
 - With nobody touching it, the result goes back to the camera after `boothResetSeconds` (45 by default, in `config.js`) and the guest's photo is cleared. Any touch restarts the countdown, and "Next guest" skips it.
 - The screen stays on while the camera is open. Tip: use the tablet's guided-access or kiosk mode so guests can't leave the page.
 - Quickest setup: open the promo kit, find **5 · Event tablet**, and point the tablet's camera at its QR code. It opens booth mode tagged `src=booth`.
+- For a full-screen kiosk, use **Add to Home Screen** from the booth link. The icon reopens straight into booth mode.
 
 ## 5. Analytics (optional, still self-hosted)
 

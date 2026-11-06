@@ -21,6 +21,10 @@
   <meta name="apple-mobile-web-app-title" content="VF AR">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.webmanifest">
+  <script>
+    // an event tablet added to the home screen from a ?booth link should reopen in booth mode
+    if (/[?&]booth(=|&|$)/.test(location.search)) document.querySelector('link[rel="manifest"]').href = 'manifest-booth.webmanifest';
+  </script>
   <link rel="modulepreload" href="vendor/mediapipe/vision_bundle.mjs">
   <link rel="preload" href="vendor/fonts/Syncopate-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="vendor/fonts/RobotoMono-400.woff2" as="font" type="font/woff2" crossorigin>
