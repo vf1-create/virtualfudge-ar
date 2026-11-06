@@ -192,6 +192,7 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
 .cta { position: relative; z-index: 2; color: var(--brand); font-size: 13px; text-decoration: underline; text-underline-offset: 4px; padding: 4px 8px; }
 /* Booth mode (?booth): the result screen offers a QR code to each guest's own phone, never the tablet's Share/Download */
 .booth #shareBtn, .booth #saveBtn, .booth #copyBtn, .booth #saveHint, .booth #captionText, .booth #tagLine, .booth #cta { display: none !important; }
+.booth #flipBtn { display: none !important; } /* a selfie booth always faces the guest: nobody leaves the next guest on the back camera */
 .booth-panel { position: relative; z-index: 2; display: flex; align-items: center; gap: 16px; width: min(100%, 420px); padding: 14px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); }
 .booth-panel canvas { width: 132px; height: 132px; flex: none; }
 .booth-panel p { margin: 0; }
