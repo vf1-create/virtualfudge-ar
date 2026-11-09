@@ -85,6 +85,27 @@ export default async function (check) {
       check('booth tablet (landscape): QR big enough to scan, everything on screen', lay.qr >= 140 && lay.qrOn && lay.nextOn, JSON.stringify(lay));
       await p.context().close();
     }
+    // Venue Wi-Fi drops the QR library on first load: the link shows instead of a blank square, and the next result retries
+    {
+      const p = await page(b, TABLET);
+      let block = true;
+      await p.route('**/vendor/qrcode.js', (r) => (block ? r.abort() : r.continue()));
+      await p.goto(`${BASE}?booth&src=debug`); await p.click('#startBtn', { force: true }); await ready(p);
+      await photo(p);
+      const off = await p.evaluate(() => ({ qr: !!document.querySelector('#boothQR').offsetParent, title: document.querySelector('.booth-title').textContent }));
+      check('booth without the QR download: the link is shown instead of a blank code', !off.qr && off.title === `Make yours on your phone: ${new URL(BASE).host}${new URL(BASE).pathname.replace(/\/$/, '')}`, JSON.stringify(off));
+      block = false;
+      await p.click('#retakeBtn'); await waitScreen(p, 'ar'); await photo(p);
+      await p.waitForFunction(() => !!document.querySelector('#boothQR').offsetParent, null, { timeout: 5000 }).catch(() => {});
+      await p.addScriptTag({ content: JSQR });
+      const on = await p.evaluate(() => {
+        const c = document.querySelector('#boothQR'), w = 400, t = Object.assign(document.createElement('canvas'), { width: w, height: w }), g = t.getContext('2d');
+        g.drawImage(c, 0, 0, w, w);
+        return { shown: !!c.offsetParent, title: document.querySelector('.booth-title').textContent, data: jsQR(g.getImageData(0, 0, w, w).data, w, w)?.data ?? null };
+      });
+      check('booth: the next guest\'s result retries the download and shows a working QR', on.shown && on.data === `${BASE}?src=booth-qr` && on.title === 'Scan to make yours on your phone', JSON.stringify(on));
+      await p.context().close();
+    }
     // Without ?booth nothing changes
     {
       const p = await page(b, PHONE);

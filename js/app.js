@@ -91,16 +91,24 @@ if (C.ctaLabel && C.ctaUrl) {
 const isDesktop = matchMedia('(hover: hover) and (pointer: fine)').matches;
 // a QR code that opens this page on the visitor's own phone, tagged with where they scanned it
 const phoneLink = (tag) => { const u = new URL(location.origin + location.pathname); u.searchParams.set('src', tag); return u.href; }; // never echo foreign query params
-if (isDesktop || BOOTH) { // phones never need the QR library
+// A booth tablet loads this once and then runs all day: if the download fails (patchy venue Wi-Fi), each new
+// result retries it, and until it arrives the panel shows the plain link instead of a blank square.
+let qrState = ''; // '' (not loaded) · 'loading' · 'done'
+function loadQR() {
+  if (qrState || !(isDesktop || BOOTH)) return; // phones never need the QR library
+  qrState = 'loading';
   const s = Object.assign(document.createElement('script'), { src: 'vendor/qrcode.js', async: true });
   s.onload = () => {
+    qrState = 'done';
     try {
       if (isDesktop) { drawQR($('#qr'), phoneLink('desktop-qr')); $('#desktopQR').hidden = false; }
-      if (BOOTH) drawQR($('#boothQR'), phoneLink('booth-qr'));
+      if (BOOTH) { drawQR($('#boothQR'), phoneLink('booth-qr')); $('#boothQR').hidden = false; $('.booth-title').textContent = 'Scan to make yours on your phone'; }
     } catch (e) { console.warn(e); }
   };
+  s.onerror = () => { s.remove(); qrState = ''; };
   document.head.append(s);
 }
+loadQR();
 
 function drawQR(cv, url) {
   const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
@@ -727,7 +735,7 @@ function showResult(blob, kind, seconds) {
     ? 'To save: press and hold the photo, or open this page in your browser (••• › Open in browser).'
     : 'To save the video, open this page in your browser (••• › Open in browser).';
   show('result');
-  if (BOOTH) boothArm();
+  if (BOOTH) { loadQR(); boothArm(); }
 }
 
 function fileFor(blob) {
@@ -771,6 +779,10 @@ function boothClear() {
 if (BOOTH) {
   document.documentElement.classList.add('booth');
   $('#boothPanel').hidden = false;
+  if (qrState !== 'done') { // shown until the QR code is drawn
+    $('#boothQR').hidden = true;
+    $('.booth-title').textContent = `Make yours on your phone: ${(location.host + location.pathname).replace(/\/$/, '')}`;
+  }
   $('#boothSub').textContent = C.handle ? `Then post it and tag ${C.handle}` : `Then post it with ${C.hashtag}`;
   $('#retakeBtn').textContent = 'Next guest';
   $('#retakeBtn').classList.replace('ghost', 'primary');

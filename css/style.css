@@ -196,7 +196,7 @@ h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(
 .booth-panel { position: relative; z-index: 2; display: flex; align-items: center; gap: 16px; width: min(100%, 420px); padding: 14px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); }
 .booth-panel canvas { width: 132px; height: 132px; flex: none; }
 .booth-panel p { margin: 0; }
-.booth-title { font-weight: 500; font-size: 15px; line-height: 1.35; }
+.booth-title { font-weight: 500; font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
 .booth-sub { margin-top: 4px !important; font-size: 12.5px; color: var(--muted); }
 .booth-reset { margin-top: 10px !important; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (min-width: 700px) and (min-height: 700px) { .booth-panel canvas { width: 168px; height: 168px; } .booth-title { font-size: 17px; } }
