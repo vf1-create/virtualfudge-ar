@@ -1,6 +1,7 @@
 // The AR camera: capture, keyboard, focus, start-up edge cases, self-timer, result screen, effects.
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { launch, page, open, ready, screen, waitScreen, BASE, OUT, PHONE, LAPTOP } from './lib.mjs';
 
 // override fields in js/config.js for one page, e.g. { maxVideoSeconds: 2 }
@@ -192,6 +193,12 @@ export default async function (check) {
       const p = await page(b, LAPTOP);
       await p.goto(`${BASE}?utm=${'x'.repeat(4000)}`); await p.waitForTimeout(1500);
       check('desktop QR shows even with a 4 KB query string', !(await p.evaluate(() => document.querySelector('#desktopQR').hidden)) && !p.errs.length, p.errs.join(' | '));
+      await p.addScriptTag({ content: fs.readFileSync(createRequire(import.meta.url).resolve('jsqr/dist/jsQR.js'), 'utf8') });
+      const qr = await p.evaluate(() => {
+        const c = document.querySelector('#qr'), w = 400, t = Object.assign(document.createElement('canvas'), { width: w, height: w }), g = t.getContext('2d');
+        g.drawImage(c, 0, 0, w, w); return jsQR(g.getImageData(0, 0, w, w).data, w, w)?.data ?? null;
+      });
+      check('desktop QR scans to this camera on the phone, tagged desktop-qr, without the visitor\'s other link parameters', qr === `${BASE}?src=desktop-qr`, qr);
       await p.context().close();
     }
     // Camera blocked: back on the intro with a way forward

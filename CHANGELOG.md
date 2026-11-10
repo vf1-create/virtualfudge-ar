@@ -2,6 +2,9 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Tue Nov 10
+- Test only: the "open on your phone" QR code on computers is now scanned in the tests too (it opens the camera tagged `desktop-qr` and drops any other link parameters the visitor arrived with), like every other QR code the project makes. No change to the site.
+
 ## Mon Nov 9
 - Booth tablets on patchy venue Wi-Fi: if the QR code part failed to download when the page opened, every guest saw a blank square all day. Now the panel shows the plain link instead, and each new photo retries the download until the QR code appears.
 
