@@ -292,14 +292,14 @@
     warn.textContent = !url ? 'That isn’t an https:// link. Phone cameras only work on https sites.' : 'That link is too long for a QR code. Try a shorter one.';
     $('#url').setAttribute('aria-invalid', String(!ok));
     for (const id of ['dlQR', 'copyLink', 'dlPoster', 'writeNfc', 'copyBooth']) $('#' + id).disabled = !ok;
-    clearTimeout(copiedTimer); $('#copyLink').textContent = 'Copy link'; $('#copyBooth').textContent = 'Copy booth link';
+    clearTimeout(copiedTimer); clearTimeout(boothCopiedTimer); $('#copyLink').textContent = 'Copy link'; $('#copyBooth').textContent = 'Copy booth link';
     const bq = $('#boothQR'), booth = boothUrl();
     bq.getContext('2d').clearRect(0, 0, bq.width, bq.height);
     if (ok && booth) drawQR(bq, booth, 0, 0, bq.width);
     $('#boothUrl').textContent = (ok && booth) || '—';
     drawPoster();
   }
-  let copiedTimer = 0, pending = 0;
+  let copiedTimer = 0, boothCopiedTimer = 0, pending = 0;
   const schedule = () => { if (!pending) pending = requestAnimationFrame(() => { pending = 0; refresh(); }); }; // one redraw per frame while typing
 
   function download(canvas, name) {
@@ -335,7 +335,7 @@
       getSelection().removeAllRanges(); getSelection().addRange(r);
       btn.textContent = 'Selected: copy it above';
     }
-    setTimeout(() => { btn.textContent = 'Copy booth link'; }, 2500);
+    clearTimeout(boothCopiedTimer); boothCopiedTimer = setTimeout(() => { btn.textContent = 'Copy booth link'; }, 2500); // a second tap gets its full 2.5 s
   });
   document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
     document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-pressed', x === b));

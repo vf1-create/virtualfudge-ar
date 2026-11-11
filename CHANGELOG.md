@@ -2,6 +2,9 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Wed Nov 11
+- Promo kit: tapping "Copy booth link" a second time no longer cuts the "Copied ✓" confirmation short (the first tap's reset fired half a second after the second copy). It now matches "Copy link".
+
 ## Tue Nov 10
 - Test only: the "open on your phone" QR code on computers is now scanned in the tests too (it opens the camera tagged `desktop-qr` and drops any other link parameters the visitor arrived with), like every other QR code the project makes. No change to the site.
 

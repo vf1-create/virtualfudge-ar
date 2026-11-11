@@ -38,6 +38,9 @@ export default async function (check) {
     await k.fill('#url', 'https://ar.virtualfudge.com/'); await k.waitForTimeout(200);
     await k.click('#copyLink'); await k.waitForTimeout(200); const lab1 = await k.textContent('#copyLink'); await k.selectOption('#src', 'tiktok'); await k.waitForTimeout(100);
     check('kit#8 "Copied ✓" resets when the link changes', lab1.includes('Copied') && (await k.textContent('#copyLink')) === 'Copy link', lab1);
+    await k.click('#copyBooth'); await k.waitForTimeout(1800); await k.click('#copyBooth'); await k.waitForTimeout(1000); // 2.8 s after the first tap
+    const lab2 = await k.textContent('#copyBooth');
+    check('kit#8 a second "Copy booth link" tap keeps its confirmation for the full time', lab2 !== 'Copy booth link', lab2);
     await k.click('text=Print A4'); await k.waitForTimeout(300); s = await st();
     check('kit#5 Print A4 → src=poster', s.src === 'poster' && s.final.endsWith('src=poster'), s.final);
     await k.click('text=Feed 4:5'); await k.waitForTimeout(200); s = await st();
