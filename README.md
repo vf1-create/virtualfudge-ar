@@ -105,6 +105,7 @@ Add `?booth` to the link (e.g. `https://vf1-create.github.io/virtualfudge-ar/?bo
 - Quickest setup: open the promo kit, find **5 · Event tablet**, and point the tablet's camera at its QR code. It opens booth mode tagged `src=booth`.
 - For a full-screen kiosk, use **Add to Home Screen** from the booth link. The icon reopens straight into booth mode.
 - The switch-camera button is hidden in booth mode, so the booth always faces the guest.
+- Patchy venue Wi-Fi: the face-tracking engine is cached on the tablet after its first visit, but the QR code is drawn by a small extra download. If that download fails, the panel shows the plain link to type in instead of a blank code, and every new photo tries the download again until the code appears. Tip: open the booth page before guests arrive, while the Wi-Fi is good; once the code is drawn it stays for as long as the page is open.
 
 ## 5. Analytics (optional, still self-hosted)
 

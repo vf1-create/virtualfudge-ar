@@ -2,6 +2,9 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Mon Nov 16
+- README: the booth-mode section now tells event staff what happens on patchy venue Wi-Fi (the link shows until the QR code loads) and to open the booth page before guests arrive. Docs only.
+
 ## Wed Nov 11
 - Promo kit: tapping "Copy booth link" a second time no longer cuts the "Copied ✓" confirmation short (the first tap's reset fired half a second after the second copy). It now matches "Copy link".
 
