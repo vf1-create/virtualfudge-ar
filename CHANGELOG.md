@@ -2,6 +2,9 @@
 
 What changed, day by day (Eastern time). Live: https://vf1-create.github.io/virtualfudge-ar/
 
+## Tue Nov 17
+- Housekeeping before public posting: the note on the link-preview tags was out of date (it still said to make the preview image link absolute, done Oct 20). It now says what to change if the filter moves to its own domain, so shared links keep previewing the right address. No visible change.
+
 ## Mon Nov 16
 - README: the booth-mode section now tells event staff what happens on patchy venue Wi-Fi (the link shows until the QR code loads) and to open the booth page before guests arrive. Docs only.
 
